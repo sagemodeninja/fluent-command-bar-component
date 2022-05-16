@@ -1,0 +1,89 @@
+@font-face {
+    font-family: "Segoe UI Variable Small";
+    font-weight: 300;
+    src: url(segoe-ui-variable-small-light.ttf);
+}
+
+@font-face {
+    font-family: "Segoe UI Variable Small";
+    font-weight: 350;
+    src: url(segoe-ui-variable-small-semilight.ttf);
+}
+
+@font-face {
+    font-family: "Segoe UI Variable Small";
+    font-weight: 400;
+    src: url(segoe-ui-variable-small.ttf);
+}
+
+@font-face {
+    font-family: "Segoe UI Variable Small";
+    font-weight: 600;
+    src: url(segoe-ui-variable-small-semibold.ttf);
+}
+
+@font-face {
+    font-family: "Segoe UI Variable Small";
+    font-weight: 700;
+    src: url(segoe-ui-variable-small-bold.ttf);
+}
+
+@font-face {
+    font-family: "Segoe UI Variable Text";
+    font-weight: 300;
+    src: url(segoe-ui-variable-text-light.ttf);
+}
+
+@font-face {
+    font-family: "Segoe UI Variable Text";
+    font-weight: 350;
+    src: url(segoe-ui-variable-text-semilight.ttf);
+}
+
+@font-face {
+    font-family: "Segoe UI Variable Text";
+    font-weight: 400;
+    src: url(segoe-ui-variable-text.ttf);
+}
+
+@font-face {
+    font-family: "Segoe UI Variable Text";
+    font-weight: 600;
+    src: url(segoe-ui-variable-text-semibold.ttf);
+}
+
+@font-face {
+    font-family: "Segoe UI Variable Text";
+    font-weight: 700;
+    src: url(segoe-ui-variable-text-bold.ttf);
+}
+
+@font-face {
+    font-family: "Segoe UI Variable Display";
+    font-weight: 300;
+    src: url(segoe-ui-variable-display-light.ttf);
+}
+
+@font-face {
+    font-family: "Segoe UI Variable Display";
+    font-weight: 350;
+    src: url(segoe-ui-variable-display-semilight.ttf);
+}
+
+@font-face {
+    font-family: "Segoe UI Variable Display";
+    font-weight: 400;
+    src: url(segoe-ui-variable-display.ttf);
+}
+
+@font-face {
+    font-family: "Segoe UI Variable Display";
+    font-weight: 600;
+    src: url(segoe-ui-variable-display-semibold.ttf);
+}
+
+@font-face {
+    font-family: "Segoe UI Variable Display";
+    font-weight: 700;
+    src: url(segoe-ui-variable-display-bold.ttf);
+}
