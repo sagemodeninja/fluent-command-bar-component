@@ -8,11 +8,21 @@
         <title>Command Bar - Demo</title>
     </head>
     <body>
+        <p>AppBarButton</p>
         <fluent-app-bar-button icon="Add" label="Add"></fluent-app-bar-button>
-        <fluent-app-bar-button icon="Edit" label="Edit"></fluent-app-bar-button>
-        <fluent-app-bar-button label="Share">
-            <fluent-font-icon glyph="&#xE72D" slot="icon"></fluent-font-icon>
-        </fluent-app-bar-button>
+
+        <p>AppBarSeparator</p>
+        <fluent-app-bar-separator></fluent-app-bar-separator>
+        
+        <p>CommandBar</p>
+        <fluent-command-bar>
+            <fluent-app-bar-button icon="Add" label="Add"></fluent-app-bar-button>
+            <fluent-app-bar-button icon="Edit" label="Edit"></fluent-app-bar-button>
+            <fluent-app-bar-separator></fluent-app-bar-separator>
+            <fluent-app-bar-button label="Share">
+                <fluent-font-icon glyph="&#xE72D" slot="icon"></fluent-font-icon>
+            </fluent-app-bar-button>
+        </fluent-command-bar>
 
         <script src="https://cdn.jsdelivr.net/gh/sagemodeninja/fluent-icon-element-component@v1.0.1/src/fluent-icon-element.min.js"></script>
         <script src="../src/fluent-command-bar.js"></script>
