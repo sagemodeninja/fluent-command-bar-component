@@ -4,8 +4,6 @@ document.addEventListener("DOMContentLoaded", e => {
 
     commandButtons.forEach(command => {
         command.addEventListener("click", e => {
-            console.log(e);
-
             debug.style.display = "block";
             debug.textContent = `You clicked: ${e.target.label}`;
         });
