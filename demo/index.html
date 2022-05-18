@@ -5,6 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="src/fonts/segoe-fluent-icons/segoe-fluent-icons.css">
         <link rel="stylesheet" href="src/fonts/segoe-ui-variable/segoe-ui-variable.css">
+        <link rel="stylesheet" href="src/css/style.css">
         <title>Command Bar - Demo</title>
     </head>
     <body>
@@ -16,15 +17,27 @@
         
         <p>CommandBar</p>
         <fluent-command-bar>
-            <fluent-app-bar-button icon="Add" label="Add"></fluent-app-bar-button>
-            <fluent-app-bar-button icon="Edit" label="Edit"></fluent-app-bar-button>
+            <fluent-app-bar-button class="command_button" icon="Add" label="Add" modifier="Control" key="a"></fluent-app-bar-button>
+            <fluent-app-bar-button class="command_button" icon="Edit" label="Edit"></fluent-app-bar-button>
             <fluent-app-bar-separator></fluent-app-bar-separator>
-            <fluent-app-bar-button label="Share">
+            <fluent-app-bar-button class="command_button" label="Share">
                 <fluent-font-icon glyph="&#xE72D" slot="icon"></fluent-font-icon>
             </fluent-app-bar-button>
-        </fluent-command-bar>
 
+            <div slot="secondary-commands">
+                <fluent-app-bar-button class="command_button" icon="Settings" label="Settings" modifier="Control" key="I"></fluent-app-bar-button>
+                <fluent-app-bar-button class="command_button" icon="Add" label="Button 1" modifier="Alt" key="N"></fluent-app-bar-button>
+                <fluent-app-bar-button class="command_button" icon="Delete" label="Button 2" key="Delete"></fluent-app-bar-button>
+                <fluent-app-bar-separator></fluent-app-bar-separator>
+                <fluent-app-bar-button class="command_button" icon="FontDecrease" label="Very long Button 3" modifier="Control" key="-"></fluent-app-bar-button>
+                <fluent-app-bar-button class="command_button" icon="FontIncrease" label="Button 4" modifier="Control" key="+"></fluent-app-bar-button>
+            </div>
+        </fluent-command-bar>
+        <p id="debug" style="display: none;"></p>
+        
         <script src="https://cdn.jsdelivr.net/gh/sagemodeninja/fluent-icon-element-component@v1.0.1/src/fluent-icon-element.min.js"></script>
+        <script src="src/js/mousetrap.min.js"></script>
         <script src="../src/fluent-command-bar.js"></script>
+        <script src="src/js/script.js"></script>
     </body>
 </html>

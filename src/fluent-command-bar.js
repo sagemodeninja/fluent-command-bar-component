@@ -1,5 +1,3 @@
-//box-shadow: 0 0 2px rgba(0, 0, 0, 0.2), 0 calc(32 * 0.5px) calc((32 * 1px)) rgba(0, 0, 0, 0.24);
-
 (function() {
     const template = document.createElement("template");
     template.innerHTML = `
@@ -7,6 +5,11 @@
     :host {
         display: inline-block;
         user-select: none;
+    }
+
+    :host([is-secondary]) {
+        display: block;
+        margin: 4px;
     }
 
     /* Button */
@@ -45,9 +48,28 @@
         font-family: 'Segoe UI Variable Small', sans-serif;
         font-size: 12px;
         font-weight: 400;
+        line-height: 36px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    :host([is-secondary]) .content {
+        font-family: 'Segoe UI Variable Text', sans-serif;
+        font-size: 14px;
+    }
+
+    /* Keyboard accelerator */
+    .keyboard-accelerator {
+        color: #5b5b5b;
+        display: none;
+        font-family: 'Segoe UI Variable Small', sans-serif;
+        font-size: 12px;
+        margin-left: 30px;
+    }
+
+    :host([is-secondary]) .keyboard-accelerator {
+        display: inline-block;
     }
     </style>
     <div class='button'>
@@ -55,6 +77,7 @@
         <slot name='icon'>
         </slot>
         <span class='content'></span>
+        <span class='keyboard-accelerator'></span>
     </div>
     `;
 
@@ -67,7 +90,7 @@
         }
 
         static get observedAttributes() {
-            return ["icon", "label"];
+            return ["icon", "label", "modifier", "key"];
         }
 
         /* Attributes */
@@ -89,6 +112,24 @@
             this.setLabel();
         }
         
+        get modifier() {
+            return this.getAttribute("modifier");
+        }
+
+        set modifier(value) {
+            this.setAttribute("modifier", value);
+            this.setAccelerator();
+        }
+        
+        get key() {
+            return this.getAttribute("key");
+        }
+
+        set key(value) {
+            this.setAttribute("key", value);
+            this.setAccelerator();
+        }
+        
         /* DOM */
         get iconSpan() {
             this._iconSpan ??= this.shadowRoot.querySelector(".icon");
@@ -104,6 +145,30 @@
             this._contentSpan ??= this.shadowRoot.querySelector(".content");
             return this._contentSpan;
         }
+        
+        get acceleratorSpan() {
+            this._acceleratorSpan ??= this.shadowRoot.querySelector(".keyboard-accelerator");
+            return this._acceleratorSpan;
+        }
+
+        /* Helpers */
+        get formattedModifier() {
+            return this.modifier.replace("Control", "Ctrl");
+        }
+
+        get formattedAccelerator() { 
+            return this.modifier
+                ? this.formattedModifier + "+" + this.key
+                : this.key;
+        }
+
+        get supportedModifier() {
+            return this.modifier.toLowerCase().replace("control", "mod");
+        }
+
+        get supportedKey() {
+            return this.key.toLowerCase().replace("delete", "del").replace("+", "=");
+        }
 
         connectedCallback() {
             this.setIcon();
@@ -111,10 +176,20 @@
             
             // Event listeners
             this.customIconSlot.addEventListener("slotchange", e => {
-                const hasCustomIcons = this.customIconSlot.assignedNodes().length > 0;
+                const nodes = this.customIconSlot.assignedNodes();
+                const hasCustomIcons = nodes.length > 0;
 
                 this.iconSpan.style.display = hasCustomIcons ? "none" : "inline-block";
                 this.customIconSlot.style.display = hasCustomIcons ? "default" : "none";
+
+                // Custom icon causes click events to stop at the icon.
+                // This will bubble it further to the button itself.
+                nodes.forEach(e => {
+                    e.addEventListener("click", e=> {
+                        this.click();
+                        e.stopPropagation();
+                    });
+                });
             });
         }
         
@@ -122,6 +197,10 @@
             switch (name) {
                 case "icon": this.setIcon(); break;
                 case "label": this.setLabel(); break;
+                case "modifier": 
+                case "key":
+                    this.setAccelerator();
+                    break;
             }
         }
 
@@ -131,6 +210,26 @@
 
         setLabel() {
             this.contentSpan.textContent = this.label;
+        }
+
+        setAccelerator() {
+            if(!this.key)
+                return;
+
+            this.acceleratorSpan.textContent = this.formattedAccelerator ?? "";
+
+            var accelerator = this.modifier && this.key
+                ? this.supportedModifier + "+" + this.supportedKey
+                : this.supportedKey;
+
+            Mousetrap.bind(accelerator, e => {
+                this.click();
+                return false;
+            });
+        }
+
+        setAcceleratorWidth(value) {
+            this.acceleratorSpan.style.width = value + "px";
         }
     }
 
@@ -147,6 +246,12 @@
         height: 30px;
         min-height: 30px;
         width: 1px;
+    }
+
+    :host([horizontal]) {
+        height: 1px;
+        min-height: 1px;
+        width: 100%;
     }
     </style>
     `;
@@ -219,6 +324,24 @@
     .button fluent-symbol-icon {
         margin: 0 8px;
     }
+
+    /* Secondary commands */
+    .secondary-commands {
+        background-color: #f7f7f7;
+        border-radius: 5px;
+        box-shadow: 0 0 2px rgba(0, 0, 0, 0.2), 0 calc(32 * 0.5px) calc((32 * 1px)) rgba(0, 0, 0, 0.24);
+        display: none;
+        flex-direction: column;
+        margin-top: 5px;
+        position: absolute;
+        right: 0;
+        top: 100%;
+        z-index: 1;
+    }
+
+    .command-bar.active .secondary-commands {
+        display: flex;
+    }
     </style>
     <div class='command-bar'>
         <div class='primary-commands'>
@@ -227,6 +350,9 @@
         <div class='button more-button'>
             <fluent-symbol-icon symbol='More' font-size="20" title="See more"></fluent-symbol-icon>
         </div>
+        <div class='secondary-commands'>
+            <slot name='secondary-commands'></slot>
+        <div>
     </div>
     `;
 
@@ -262,6 +388,11 @@
             this._moreButton ??= this.shadowRoot.querySelector(".more-button");
             return this._moreButton;
         }
+        
+        get secondaryCommandsSlot() {
+            this._secondaryCommandsSlot ??= this.shadowRoot.querySelector("slot[name=secondary-commands]");
+            return this._secondaryCommandsSlot;
+        }
 
         connectedCallback() {
             this.setIsOpen();
@@ -272,7 +403,25 @@
                 e.stopPropagation();
             });
 
-            // Close 
+            this.secondaryCommandsSlot.addEventListener("slotchange", e => {
+                var container = this.secondaryCommandsSlot.assignedNodes()[0];
+                var commands = container.querySelectorAll("fluent-app-bar-button");
+                var separators = container.querySelectorAll("fluent-app-bar-separator");
+                
+                // Calculate width of accelerator labels based on longest length.
+                const longest = Array.from(commands).reduce((a, b) => a.formattedAccelerator.length > b.formattedAccelerator.length ? a : b);
+                const acceleratorWidth = longest.formattedAccelerator.length * 6;
+
+                commands.forEach(command => {
+                    command.toggleAttribute("is-secondary", true);
+                    command.setAcceleratorWidth(acceleratorWidth);
+                });
+
+                separators.forEach(separator => {
+                    separator.toggleAttribute("horizontal", true);
+                });
+            });
+
             window.addEventListener("click", () => {
                 this.toggleAttribute("is-open", false);
             });
