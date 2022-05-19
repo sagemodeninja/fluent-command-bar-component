@@ -12,6 +12,10 @@
         margin: 4px;
     }
 
+    :host([disabled]) {
+        pointer-events: none;
+    }
+
     /* Button */
     .button {
         align-items: center;
@@ -36,10 +40,19 @@
         background-color: rgba(160, 160, 160, 0.06);
         color: rgba(27, 27, 27, 0.49) !important;
     }
+
+    :host([disabled]) .button {
+        color: rgba(27, 27, 27, 0.49) !important;
+    }
     
     .button fluent-symbol-icon,
     .button ::slotted(*) {
         margin-right: 8px;
+    }
+
+    /* Custom icon */
+    :host([disabled]) ::slotted(fluent-image-icon) {
+        opacity: 0.49;
     }
     
     /* Content */
@@ -70,6 +83,10 @@
 
     :host([is-secondary]) .keyboard-accelerator {
         display: inline-block;
+    }
+
+    :host([disabled]) .keyboard-accelerator {
+        color: rgba(27, 27, 27, 0.49) !important;
     }
     </style>
     <div class='button'>
@@ -128,6 +145,10 @@
         set key(value) {
             this.setAttribute("key", value);
             this.setAccelerator();
+        }
+
+        get disabled() {
+            return this.hasAttribute("disabled");
         }
         
         /* DOM */
@@ -218,12 +239,15 @@
 
             this.acceleratorSpan.textContent = this.formattedAccelerator ?? "";
 
-            var accelerator = this.modifier && this.key
+            // Keyboard accelerator.
+            var accelerator = this.modifier
                 ? this.supportedModifier + "+" + this.supportedKey
                 : this.supportedKey;
 
             Mousetrap.bind(accelerator, e => {
-                this.click();
+                if(!this.disabled)
+                    this.click();
+                
                 return false;
             });
         }
@@ -325,6 +349,10 @@
         margin: 0 8px;
     }
 
+    .more-button {
+        display: none;
+    }
+
     /* Secondary commands */
     .secondary-commands {
         background-color: #f7f7f7;
@@ -405,6 +433,12 @@
 
             this.secondaryCommandsSlot.addEventListener("slotchange", e => {
                 var container = this.secondaryCommandsSlot.assignedNodes()[0];
+
+                this.moreButton.style.display = container && container.children.length ? "flex" : "none";
+
+                if(!container)
+                    return;
+                
                 var commands = container.querySelectorAll("fluent-app-bar-button");
                 var separators = container.querySelectorAll("fluent-app-bar-separator");
                 
