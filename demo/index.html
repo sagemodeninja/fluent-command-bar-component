@@ -10,12 +10,24 @@
     </head>
     <body>
         <p>AppBarButton</p>
-        <fluent-app-bar-button icon="Add" label="Add"></fluent-app-bar-button>
+        <fluent-app-bar-button icon="AttachCamera" appearance="bottom" label="Attach Camera"></fluent-app-bar-button>
+        <fluent-app-bar-button icon="Like" label="Like" appearance="collapsed"></fluent-app-bar-button>
+        <fluent-app-bar-button icon="Dislike" label="Dislike"></fluent-app-bar-button>
+
+        <p>AppBarButton w/o Label</p>
+        <fluent-app-bar-button icon="Edit"></fluent-app-bar-button>
 
         <p>AppBarSeparator</p>
-        <fluent-app-bar-separator></fluent-app-bar-separator>
+        <fluent-command-bar style="background-color: #fff; border: solid 1px #ebebeb;">
+            <fluent-app-bar-button icon="Add" label="Add"></fluent-app-bar-button>
+            <fluent-app-bar-separator></fluent-app-bar-separator>
+            <fluent-app-bar-button icon="Edit" label="Edit"></fluent-app-bar-button>
+        </fluent-command-bar>
         
         <p>CommandBar</p>
+        <button id="enable_disable">Enable Share</button>
+        <br />
+        <br />
         <fluent-command-bar>
             <fluent-app-bar-button class="command_button" icon="Add" label="Add" modifier="Control" key="A"></fluent-app-bar-button>
             <fluent-app-bar-button class="command_button" icon="Edit" label="Edit" modifier="Control" key="E"></fluent-app-bar-button>
@@ -31,14 +43,14 @@
                 <fluent-app-bar-separator></fluent-app-bar-separator>
                 <fluent-app-bar-button class="command_button" icon="FontDecrease" label="Very long Button 3" modifier="Control" key="-"></fluent-app-bar-button>
                 <fluent-app-bar-button class="command_button" icon="FontIncrease" label="Button 4" modifier="Control" key="+"></fluent-app-bar-button>
+                <fluent-app-bar-button class="command_button" icon="ClosePane" label="Close" key="Escape"></fluent-app-bar-button>
             </div>
         </fluent-command-bar>
-        <br />
-        <button id="enable_disable">Enable Share</button>
+
         <p id="debug" style="display: none;"></p>
         
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mousetrap/1.6.5/mousetrap.min.js"></script>
         <script src="https://cdn.jsdelivr.net/gh/sagemodeninja/fluent-icon-element-component@v1.0.2/src/fluent-icon-element.js"></script>
-        <script src="src/js/mousetrap.min.js"></script>
         <script src="../src/fluent-command-bar.js"></script>
         <script src="src/js/script.js"></script>
     </body>
