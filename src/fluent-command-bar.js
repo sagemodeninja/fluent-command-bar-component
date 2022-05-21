@@ -151,7 +151,7 @@ const COMMAND_BAR_PADDING = 12;
             this.setAttribute("icon", value);
             this.setIcon();
         }
-        
+
         get label() {
             return this.getAttribute("label");
         }
@@ -160,7 +160,7 @@ const COMMAND_BAR_PADDING = 12;
             this.setAttribute("label", value);
             this.setLabel();
         }
-        
+
         get modifier() {
             return this.getAttribute("modifier");
         }
@@ -169,7 +169,7 @@ const COMMAND_BAR_PADDING = 12;
             this.setAttribute("modifier", value);
             this.setAccelerator();
         }
-        
+
         get key() {
             return this.getAttribute("key");
         }
@@ -182,23 +182,23 @@ const COMMAND_BAR_PADDING = 12;
         get disabled() {
             return this.hasAttribute("disabled");
         }
-        
+
         /* DOM */
         get iconSpan() {
             this._iconSpan ??= this.shadowRoot.querySelector(".icon");
             return this._iconSpan;
         }
-        
+
         get customIconSlot() {
             this._customIconSpan ??= this.shadowRoot.querySelector("slot[name=icon]");
             return this._customIconSpan;
         }
-        
+
         get contentSpan() {
             this._contentSpan ??= this.shadowRoot.querySelector(".content");
             return this._contentSpan;
         }
-        
+
         get acceleratorSpan() {
             this._acceleratorSpan ??= this.shadowRoot.querySelector(".keyboard-accelerator");
             return this._acceleratorSpan;
@@ -209,7 +209,7 @@ const COMMAND_BAR_PADDING = 12;
             return this.modifier.replace("Control", "Ctrl");
         }
 
-        get formattedAccelerator() { 
+        get formattedAccelerator() {
             return this.modifier
                 ? this.formattedModifier + "+" + this.key
                 : this.key;
@@ -228,7 +228,7 @@ const COMMAND_BAR_PADDING = 12;
             this.setLabel();
 
             this.setAttribute("tabindex", "0");
-            
+
             // Event listeners
             this.customIconSlot.addEventListener("slotchange", e => {
                 const nodes = this.customIconSlot.assignedNodes();
@@ -247,12 +247,12 @@ const COMMAND_BAR_PADDING = 12;
                 });
             });
         }
-        
+
         attributeChangedCallback(name, oldValue, newValue) {
             switch (name) {
                 case "icon": this.setIcon(); break;
                 case "label": this.setLabel(); break;
-                case "modifier": 
+                case "modifier":
                 case "key":
                     this.setAccelerator();
                     break;
@@ -283,7 +283,7 @@ const COMMAND_BAR_PADDING = 12;
             Mousetrap.bind(accelerator, e => {
                 if(!this.disabled)
                     this.click();
-                
+
                 return false;
             });
         }
@@ -469,7 +469,7 @@ const COMMAND_BAR_PADDING = 12;
         get isOpen() {
             return this.hasAttribute("is-open") && eval(this.getAttribute("is-open"));
         }
-        
+
         /* DOM */
         get commandBar() {
             this._commandBar ??= this.shadowRoot.querySelector(".command-bar");
@@ -485,17 +485,17 @@ const COMMAND_BAR_PADDING = 12;
             this._primaryCommandsSlot ??= this.shadowRoot.querySelector(".primary-commands slot");
             return this._primaryCommandsSlot;
         }
-        
+
         get moreButton() {
             this._moreButton ??= this.shadowRoot.querySelector(".more-button");
             return this._moreButton;
         }
-        
+
         get secondaryCommandsSlot() {
             this._secondaryCommandsSlot ??= this.shadowRoot.querySelector("slot[name=secondary-commands]");
             return this._secondaryCommandsSlot;
         }
-        
+
         get collapsedCommandsContainer() {
             this._collapsedCommandsContainer ??= this.shadowRoot.querySelector(".collapsed-commands");
             return this._collapsedCommandsContainer;
@@ -535,10 +535,10 @@ const COMMAND_BAR_PADDING = 12;
 
                 if(!this.secondaryContainer)
                     return;
-                
+
                 var commands = this.secondaryContainer.querySelectorAll("fluent-app-bar-button");
                 var separators = this.secondaryContainer.querySelectorAll("fluent-app-bar-separator");
-                
+
                 // Calculate width of accelerator labels based on longest length.
                 const longest = Array.from(commands).reduce((a, b) => a.formattedAccelerator.length > b.formattedAccelerator.length ? a : b);
                 const acceleratorWidth = longest.formattedAccelerator.length * 6;
@@ -561,15 +561,23 @@ const COMMAND_BAR_PADDING = 12;
             window.addEventListener("click", () => {
                 this.toggleAttribute("is-open", false);
             });
+
+            // Waits for primary commands to be stored, then do initial auto adjusting.
+            const initialAdjustInterval = setInterval(() => {
+                if (this.primaryCommandsStore) {
+                    clearInterval(initialAdjustInterval);
+                    this.primaryCommandsStore.forEach(this.autoAdjust);
+                }
+            }, 50);
         }
-        
+
         attributeChangedCallback(name, oldValue, newValue) {
             switch (name) {
                 case "is-open": this.setIsOpen(); break;
                 case "default-label-position": this.setLabelPosition(); break;
             }
         }
-        
+
         setLabelPosition() {
             if(!["bottom", "collapsed", "right"].includes(this.defaultLabelPosition))
                 return;
@@ -596,8 +604,8 @@ const COMMAND_BAR_PADDING = 12;
         }
 
         autoAdjust() {
-            const parentWidth = this.parentElement.offsetWidth;
-            const potentialWidth = parentWidth - (this.offsetLeft + MORE_BTN_WIDTH + 12); // 12px worth of padding
+            const parentWidth = this.parentElement.getClientRects()[0].width;
+            const potentialWidth = parentWidth - (this.getLeft() + MORE_BTN_WIDTH + COMMAND_BAR_PADDING);
 
             const index = this.lastVisibleCommandIndex;
             const store = this.primaryCommandsStore;
@@ -614,7 +622,7 @@ const COMMAND_BAR_PADDING = 12;
                 if(index > 0 && command.previous.nodeName === "FLUENT-APP-BAR-SEPARATOR")
                     this.moveCommands(command.previous, this, this.collapsedCommandsContainer);
             }
-            
+
             if(rightIndex !== index && rightCommand.bounds < potentialWidth)
             {
                 if(rightIndex > 0 && rightCommand.previous.nodeName === "FLUENT-APP-BAR-SEPARATOR")
@@ -625,11 +633,21 @@ const COMMAND_BAR_PADDING = 12;
             }
         }
 
+        getLeft() {
+            if (!this.previousElementSibling)
+                return 0;
+
+            const parentLeft = this.parentElement.getClientRects()[0].left;
+            const siblingLeft = this.previousElementSibling.getClientRects()[0].left;
+
+            return (siblingLeft - parentLeft) + this.previousElementSibling.offsetWidth;
+        }
+
         moveCommands(command, origin, destination) {
             const collapse = origin === this;
 
             this.isMovingCommand = true;
-            
+
             origin.removeChild(command);
 
             if(collapse)
@@ -648,12 +666,12 @@ const COMMAND_BAR_PADDING = 12;
 
         toggleAttributes(command, toggle) {
             var attribute;
-            
+
             switch(command.nodeName) {
                 case "FLUENT-APP-BAR-BUTTON": attribute = "is-secondary"; break;
                 case "FLUENT-APP-BAR-SEPARATOR": attribute = "horizontal"; break;
             }
-                
+
             command.toggleAttribute(attribute, toggle);
         }
     }
