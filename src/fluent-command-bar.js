@@ -1,9 +1,13 @@
+const MORE_BTN_WIDTH = 47;
+const COMMAND_BAR_PADDING = 12;
+
 (function() {
     const template = document.createElement("template");
     template.innerHTML = `
     <style>
     :host {
         display: inline-block;
+        outline: none;
         user-select: none;
     }
 
@@ -27,13 +31,9 @@
         display: flex;
         height: 36px;
         min-height: 36px;
-        padding: 0 10px;
+        overflow: hidden;
+        padding: 10px;
         position: relative;
-    }
-    
-    .button:hover,
-    :host(.active) .button {
-        background-color: rgba(156, 156, 156, 0.1);
     }
     
     .button:active {
@@ -41,13 +41,31 @@
         color: rgba(27, 27, 27, 0.49) !important;
     }
 
+    @media (hover: hover) {
+        :host(:focus) .button,
+        .button:hover {
+            background-color: rgba(156, 156, 156, 0.1);
+        }
+    }
+
     :host([disabled]) .button {
         color: rgba(27, 27, 27, 0.49) !important;
     }
-    
-    .button fluent-symbol-icon,
-    .button ::slotted(*) {
-        margin-right: 8px;
+
+    :host([disabled][is-secondary]) .button {
+        min-width: 180px;
+    }
+
+    :host([appearance=bottom]:not([is-secondary])) .button {
+        flex-direction: column;
+        height: 100%;
+        justify-content: center;
+        width: 64px;
+    }
+
+    :host([appearance=collapsed]:not([is-secondary])) .button {
+        justify-content: center;
+        width: 64px;
     }
 
     /* Custom icon */
@@ -65,6 +83,21 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    .content:not(:empty) {
+        margin-left: 8px;
+    }
+
+    :host([appearance=bottom]:not([is-secondary])) .content {
+        line-height: 1.5;
+        margin-left: 0;
+        text-align: center;
+        white-space: normal;
+    }
+
+    :host([appearance=collapsed]:not([is-secondary])) .content {
+        display: none;
     }
 
     :host([is-secondary]) .content {
@@ -91,8 +124,7 @@
     </style>
     <div class='button'>
         <fluent-symbol-icon class='icon'></fluent-symbol-icon>
-        <slot name='icon'>
-        </slot>
+        <slot name='icon'></slot>
         <span class='content'></span>
         <span class='keyboard-accelerator'></span>
     </div>
@@ -188,12 +220,14 @@
         }
 
         get supportedKey() {
-            return this.key.toLowerCase().replace("delete", "del").replace("+", "=");
+            return this.key.toLowerCase().replace("delete", "del").replace("+", "=").replace("escape", "esc");
         }
 
         connectedCallback() {
             this.setIcon();
             this.setLabel();
+
+            this.setAttribute("tabindex", "0");
             
             // Event listeners
             this.customIconSlot.addEventListener("slotchange", e => {
@@ -231,6 +265,7 @@
 
         setLabel() {
             this.contentSpan.textContent = this.label;
+            this.setTitle();
         }
 
         setAccelerator() {
@@ -238,6 +273,7 @@
                 return;
 
             this.acceleratorSpan.textContent = this.formattedAccelerator ?? "";
+            this.setTitle();
 
             // Keyboard accelerator.
             var accelerator = this.modifier
@@ -250,6 +286,11 @@
                 
                 return false;
             });
+        }
+
+        setTitle() {
+            const accelerator = this.formattedAccelerator ? `(${this.formattedAccelerator})` : "";
+            this.setAttribute("title", `${this.label} ${accelerator}`);
         }
 
         setAcceleratorWidth(value) {
@@ -298,64 +339,69 @@
     <style>
     :host {
         display: inline-block;
+        height: 46px;
         user-select: none;
+        max-width: 100%;
     }
 
     .command-bar {
+        align-items: center;
         border-radius: 4px;
         box-sizing: border-box;
-        padding: 6px 1px 6px 6px;
+        display: flex;
+        padding: 6px;
         position: relative;
     }
 
     .command-bar.active {
         background-color: #fff;
         border: solid 1px #ebebeb;
+        height: auto;
         padding: 5px;
     }
 
-    .command-bar,
     .primary-commands {
         align-items: center;
         column-gap: 5px;
         display: flex;
+        overflow-x: hidden;
+    }
+
+    .primary-commands:not(:empty) {
+        margin-right: 5px;
     }
 
     /* Button */
-    .button {
+    .more-button {
         align-items: center;
         background-color: transparent;
         border-radius: 5px;
         box-sizing: border-box;
         color: #1b1b1b;
         cursor: default;
-        display: flex;
-        height: 36px;
+        display: none;
+        height: 100%;
         min-height: 36px;
         padding: 0 3px;
         position: relative;
     }
     
-    .button:hover {
+    .more-button:hover {
         background-color: rgba(156, 156, 156, 0.1);
     }
     
-    .button:active {
+    .more-button:active {
         background-color: rgba(160, 160, 160, 0.06);
         color: rgba(27, 27, 27, 0.49) !important;
     }
     
-    .button fluent-symbol-icon {
+    .more-button fluent-symbol-icon {
         margin: 0 8px;
-    }
-
-    .more-button {
-        display: none;
     }
 
     /* Secondary commands */
     .secondary-commands {
-        background-color: #f7f7f7;
+        background-color: #fff;
         border-radius: 5px;
         box-shadow: 0 0 2px rgba(0, 0, 0, 0.2), 0 calc(32 * 0.5px) calc((32 * 1px)) rgba(0, 0, 0, 0.24);
         display: none;
@@ -370,16 +416,25 @@
     .command-bar.active .secondary-commands {
         display: flex;
     }
+
+    .collapsed-commands:not(:empty) {
+        border-top: solid 1px #e5e5e5;
+    }
+
+    .collapsed-commands fluent-app-bar-separator:first-child {
+        display: none;
+    }
     </style>
     <div class='command-bar'>
         <div class='primary-commands'>
             <slot></slot>
         </div>
-        <div class='button more-button'>
-            <fluent-symbol-icon symbol='More' font-size="20" title="See more"></fluent-symbol-icon>
+        <div class='more-button' title='See more'>
+            <fluent-symbol-icon symbol='More' font-size='20'></fluent-symbol-icon>
         </div>
         <div class='secondary-commands'>
             <slot name='secondary-commands'></slot>
+            <div class='collapsed-commands'></div>
         <div>
     </div>
     `;
@@ -390,26 +445,45 @@
 
             this.attachShadow({ mode: "open" });
             this.shadowRoot.append(template.content.cloneNode(true));
+
+            this.autoAdjust = this.autoAdjust.bind(this);
+
+            this.isMovingCommand = false;
+            this.lastVisibleCommandIndex = 0;
         }
 
         static get observedAttributes() {
-            return ["is-open"];
+            return ["is-open", "default-label-position"];
         }
 
         /* Attributes */
-        get isOpen() {
-            return this.getAttribute("is-open");
+        get defaultLabelPosition() {
+            return this.getAttribute("default-label-position") ?? "right";
         }
 
-        set isOpen(value) {
-            this.setAttribute("is-open", value);
-            this.setIsOpen();
+        set defaultLabelPosition(value) {
+            this.setAttribute("default-label-position", value);
+            this.setLabelPosition();
+        }
+
+        get isOpen() {
+            return this.hasAttribute("is-open") && eval(this.getAttribute("is-open"));
         }
         
         /* DOM */
         get commandBar() {
             this._commandBar ??= this.shadowRoot.querySelector(".command-bar");
             return this._commandBar;
+        }
+
+        get primaryCommandsContainer() {
+            this._primaryCommandsContainer ??= this.shadowRoot.querySelector(".primary-commands");
+            return this._primaryCommandsContainer;
+        }
+
+        get primaryCommandsSlot() {
+            this._primaryCommandsSlot ??= this.shadowRoot.querySelector(".primary-commands slot");
+            return this._primaryCommandsSlot;
         }
         
         get moreButton() {
@@ -421,26 +495,49 @@
             this._secondaryCommandsSlot ??= this.shadowRoot.querySelector("slot[name=secondary-commands]");
             return this._secondaryCommandsSlot;
         }
+        
+        get collapsedCommandsContainer() {
+            this._collapsedCommandsContainer ??= this.shadowRoot.querySelector(".collapsed-commands");
+            return this._collapsedCommandsContainer;
+        }
 
         connectedCallback() {
-            this.setIsOpen();
-
             // Event listeners
             this.moreButton.addEventListener("click", e => {
-                this.toggleAttribute("is-open");
+                this.setAttribute("is-open", !this.isOpen);
                 e.stopPropagation();
             });
 
+            this.primaryCommandsSlot.addEventListener("slotchange", (e) => {
+                var nodes = this.primaryCommandsSlot.assignedNodes();
+                this.primaryCommands = nodes.filter(command => command instanceof HTMLElement && (command.nodeName === "FLUENT-APP-BAR-BUTTON"));
+
+                if(!this.isMovingCommand)
+                {
+                    this.primaryCommandsStore = this.primaryCommands.map(command => ({
+                        parent: command.parentElement,
+                        self: command,
+                        previous: command.previousElementSibling,
+                        bounds: command.offsetLeft + command.offsetWidth
+                    }));
+
+                    this.lastVisibleCommandIndex = this.primaryCommands.length - 1;
+                }
+
+                this.isMovingCommand = false;
+                this.setLabelPosition();
+            });
+
             this.secondaryCommandsSlot.addEventListener("slotchange", e => {
-                var container = this.secondaryCommandsSlot.assignedNodes()[0];
+                this.secondaryContainer = this.secondaryCommandsSlot.assignedNodes()[0];
 
-                this.moreButton.style.display = container && container.children.length ? "flex" : "none";
+                this.setMoreButtonVisibility();
 
-                if(!container)
+                if(!this.secondaryContainer)
                     return;
                 
-                var commands = container.querySelectorAll("fluent-app-bar-button");
-                var separators = container.querySelectorAll("fluent-app-bar-separator");
+                var commands = this.secondaryContainer.querySelectorAll("fluent-app-bar-button");
+                var separators = this.secondaryContainer.querySelectorAll("fluent-app-bar-separator");
                 
                 // Calculate width of accelerator labels based on longest length.
                 const longest = Array.from(commands).reduce((a, b) => a.formattedAccelerator.length > b.formattedAccelerator.length ? a : b);
@@ -456,6 +553,11 @@
                 });
             });
 
+            window.addEventListener("resize", this.autoAdjust);
+            window.addEventListener("DOMContentLoaded", e => {
+                this.primaryCommandsStore.forEach(this.autoAdjust);
+            });
+
             window.addEventListener("click", () => {
                 this.toggleAttribute("is-open", false);
             });
@@ -464,11 +566,95 @@
         attributeChangedCallback(name, oldValue, newValue) {
             switch (name) {
                 case "is-open": this.setIsOpen(); break;
+                case "default-label-position": this.setLabelPosition(); break;
             }
+        }
+        
+        setLabelPosition() {
+            if(!["bottom", "collapsed", "right"].includes(this.defaultLabelPosition))
+                return;
+
+            var appearance = this.defaultLabelPosition;
+
+            if(appearance === "bottom" && !this.isOpen) {
+                appearance = "collapsed";
+            }
+
+            this.primaryCommands.forEach(command => {
+                command.setAttribute("appearance", appearance);
+            });
+        }
+
+        setMoreButtonVisibility() {
+            const hasCommands = (this.secondaryContainer && this.secondaryContainer.children.length) || this.collapsedCommandsContainer.children.length;
+            this.moreButton.style.display = hasCommands ? "flex" : "none";
         }
 
         setIsOpen() {
-            this.commandBar.classList.toggle("active", eval(this.isOpen));
+            this.commandBar.classList.toggle("active", this.isOpen);
+            this.setLabelPosition();
+        }
+
+        autoAdjust() {
+            const parentWidth = this.parentElement.offsetWidth;
+            const potentialWidth = parentWidth - (this.offsetLeft + MORE_BTN_WIDTH + 12); // 12px worth of padding
+
+            const index = this.lastVisibleCommandIndex;
+            const store = this.primaryCommandsStore;
+
+            const command = store[index];
+            const rightIndex = Math.min(store.length - 1, index + 1);
+            const rightCommand = store[rightIndex];
+
+            if(index >= 0 && command.bounds > potentialWidth)
+            {
+                this.moveCommands(command.self, this, this.collapsedCommandsContainer);
+                this.lastVisibleCommandIndex -= 1;
+
+                if(index > 0 && command.previous.nodeName === "FLUENT-APP-BAR-SEPARATOR")
+                    this.moveCommands(command.previous, this, this.collapsedCommandsContainer);
+            }
+            
+            if(rightIndex !== index && rightCommand.bounds < potentialWidth)
+            {
+                if(rightIndex > 0 && rightCommand.previous.nodeName === "FLUENT-APP-BAR-SEPARATOR")
+                    this.moveCommands(rightCommand.previous, this.collapsedCommandsContainer, this);
+
+                this.moveCommands(rightCommand.self, this.collapsedCommandsContainer, this);
+                this.lastVisibleCommandIndex = rightIndex;
+            }
+        }
+
+        moveCommands(command, origin, destination) {
+            const collapse = origin === this;
+
+            this.isMovingCommand = true;
+            
+            origin.removeChild(command);
+
+            if(collapse)
+            {
+                let firstSibling = destination.firstChild;
+                destination.insertBefore(command, firstSibling);
+            }
+            else
+            {
+                destination.appendChild(command);
+            }
+
+            this.toggleAttributes(command, collapse);
+            this.setMoreButtonVisibility();
+        }
+
+        toggleAttributes(command, toggle) {
+            var attribute;
+            
+            switch(command.nodeName) {
+                case "FLUENT-APP-BAR-BUTTON": attribute = "is-secondary"; break;
+                case "FLUENT-APP-BAR-SEPARATOR": attribute = "horizontal"; break;
+            }
+                
+            command.toggleAttribute(attribute, toggle);
         }
     }
 
