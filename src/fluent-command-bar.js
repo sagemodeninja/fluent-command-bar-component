@@ -446,6 +446,7 @@ const COMMAND_BAR_PADDING = 12;
             this.attachShadow({ mode: "open" });
             this.shadowRoot.append(template.content.cloneNode(true));
 
+            this.setCommandApperance = this.setCommandApperance.bind(this);
             this.autoAdjust = this.autoAdjust.bind(this);
 
             this.isMovingCommand = false;
@@ -514,6 +515,16 @@ const COMMAND_BAR_PADDING = 12;
 
                 if(!this.isMovingCommand)
                 {
+                    this.primaryCommandsStore = [];
+
+                    // Waits for primary commands to be stored, then do initial auto adjusting.
+                    const initialAdjustInterval = setInterval(() => {
+                        if (this.primaryCommandsStore) {
+                            clearInterval(initialAdjustInterval);
+                            this.primaryCommandsStore.forEach(this.autoAdjust);
+                        }
+                    }, 50);
+
                     this.primaryCommandsStore = this.primaryCommands.map(command => ({
                         parent: command.parentElement,
                         self: command,
@@ -561,14 +572,6 @@ const COMMAND_BAR_PADDING = 12;
             window.addEventListener("click", () => {
                 this.toggleAttribute("is-open", false);
             });
-
-            // Waits for primary commands to be stored, then do initial auto adjusting.
-            const initialAdjustInterval = setInterval(() => {
-                if (this.primaryCommandsStore) {
-                    clearInterval(initialAdjustInterval);
-                    this.primaryCommandsStore.forEach(this.autoAdjust);
-                }
-            }, 50);
         }
 
         attributeChangedCallback(name, oldValue, newValue) {
@@ -587,10 +590,28 @@ const COMMAND_BAR_PADDING = 12;
             if(appearance === "bottom" && !this.isOpen) {
                 appearance = "collapsed";
             }
+            
+            if(this.setCommandApperance(appearance))
+                return;
+            
+            // Waits for primary commands to be stored, then set appearance.
+            const waitInterval = setInterval(() => {
+                clearInterval(waitInterval);
+                this.setCommandApperance(appearance);
+            }, 50);
+        }
 
-            this.primaryCommands.forEach(command => {
-                command.setAttribute("appearance", appearance);
-            });
+        setCommandApperance(appearance) {
+            if(this.primaryCommands)
+            {
+                this.primaryCommands.forEach(command => {
+                    command.setAttribute("appearance", appearance);
+                });
+
+                return true;
+            }
+
+            return false;
         }
 
         setMoreButtonVisibility() {
