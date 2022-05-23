@@ -516,14 +516,17 @@ const COMMAND_BAR_PADDING = 12;
                 if(!this.isMovingCommand)
                 {
                     this.primaryCommandsStore = [];
+                    this.style.opacity = 0;
 
                     // Waits for primary commands to be stored, then do initial auto adjusting.
                     const initialAdjustInterval = setInterval(() => {
-                        if (this.primaryCommandsStore) {
-                            clearInterval(initialAdjustInterval);
-                            this.primaryCommandsStore.forEach(this.autoAdjust);
-                        }
-                    }, 50);
+                            if (this.primaryCommandsStore) {
+                                clearInterval(initialAdjustInterval);
+                                this.primaryCommandsStore.forEach(this.autoAdjust);
+                                this.setMoreButtonVisibility();
+                                this.style.opacity = 1;
+                            }
+                        }, 50);
 
                     this.primaryCommandsStore = this.primaryCommands.map(command => ({
                         parent: command.parentElement,
@@ -590,10 +593,10 @@ const COMMAND_BAR_PADDING = 12;
             if(appearance === "bottom" && !this.isOpen) {
                 appearance = "collapsed";
             }
-            
+
             if(this.setCommandApperance(appearance))
                 return;
-            
+
             // Waits for primary commands to be stored, then set appearance.
             const waitInterval = setInterval(() => {
                 clearInterval(waitInterval);
