@@ -266,6 +266,9 @@ const COMMAND_BAR_PADDING = 12;
         setLabel() {
             this.contentSpan.textContent = this.label;
             this.setTitle();
+
+            /* See comment on usage. */
+            this.dispatchEvent(new CustomEvent("labelchanged"));
         }
 
         setAccelerator() {
@@ -446,7 +449,8 @@ const COMMAND_BAR_PADDING = 12;
             this.attachShadow({ mode: "open" });
             this.shadowRoot.append(template.content.cloneNode(true));
 
-            this.setCommandApperance = this.setCommandApperance.bind(this);
+            this.setCommandAppearance = this.setCommandAppearance.bind(this);
+            this.handleSlotChange = this.handleSlotChange.bind(this);
             this.autoAdjust = this.autoAdjust.bind(this);
 
             this.isMovingCommand = false;
@@ -509,38 +513,7 @@ const COMMAND_BAR_PADDING = 12;
                 e.stopPropagation();
             });
 
-            this.primaryCommandsSlot.addEventListener("slotchange", (e) => {
-                var nodes = this.primaryCommandsSlot.assignedNodes();
-                this.primaryCommands = nodes.filter(command => command instanceof HTMLElement && (command.nodeName === "FLUENT-APP-BAR-BUTTON"));
-
-                if(!this.isMovingCommand)
-                {
-                    this.primaryCommandsStore = [];
-                    this.style.opacity = 0;
-
-                    // Waits for primary commands to be stored, then do initial auto adjusting.
-                    const initialAdjustInterval = setInterval(() => {
-                            if (this.primaryCommandsStore) {
-                                clearInterval(initialAdjustInterval);
-                                this.primaryCommandsStore.forEach(this.autoAdjust);
-                                this.setMoreButtonVisibility();
-                                this.style.opacity = 1;
-                            }
-                        }, 50);
-
-                    this.primaryCommandsStore = this.primaryCommands.map(command => ({
-                        parent: command.parentElement,
-                        self: command,
-                        previous: command.previousElementSibling,
-                        bounds: command.offsetLeft + command.offsetWidth
-                    }));
-
-                    this.lastVisibleCommandIndex = this.primaryCommands.length - 1;
-                }
-
-                this.isMovingCommand = false;
-                this.setLabelPosition();
-            });
+            this.primaryCommandsSlot.addEventListener("slotchange", this.handleSlotChange);
 
             this.secondaryCommandsSlot.addEventListener("slotchange", e => {
                 this.secondaryContainer = this.secondaryCommandsSlot.assignedNodes()[0];
@@ -594,17 +567,17 @@ const COMMAND_BAR_PADDING = 12;
                 appearance = "collapsed";
             }
 
-            if(this.setCommandApperance(appearance))
+            if(this.setCommandAppearance(appearance))
                 return;
 
             // Waits for primary commands to be stored, then set appearance.
             const waitInterval = setInterval(() => {
                 clearInterval(waitInterval);
-                this.setCommandApperance(appearance);
+                this.setCommandAppearance(appearance);
             }, 50);
         }
 
-        setCommandApperance(appearance) {
+        setCommandAppearance(appearance) {
             if(this.primaryCommands)
             {
                 this.primaryCommands.forEach(command => {
@@ -627,6 +600,43 @@ const COMMAND_BAR_PADDING = 12;
             this.setLabelPosition();
         }
 
+        handleSlotChange() {
+            const nodes = this.primaryCommandsSlot.assignedNodes();
+            this.primaryCommands = nodes.filter(command => command instanceof HTMLElement && (command.nodeName === "FLUENT-APP-BAR-BUTTON"));
+
+            if (!this.isMovingCommand) {
+                this.primaryCommandsStore = [];
+                this.style.opacity = 0;
+
+                // Waits for primary commands to be stored, then do initial auto adjusting.
+                const initialAdjustInterval = setInterval(() => {
+                    if (this.primaryCommandsStore) {
+                        clearInterval(initialAdjustInterval);
+                        this.primaryCommandsStore.forEach(this.autoAdjust);
+                        this.setMoreButtonVisibility();
+                        this.style.opacity = 1;
+                    }
+                }, 50);
+
+                this.primaryCommandsStore = this.primaryCommands.map(command => ({
+                    parent: command.parentElement,
+                    self: command,
+                    previous: command.previousElementSibling,
+                    bounds: command.offsetLeft + command.offsetWidth
+                }));
+                this.lastVisibleCommandIndex = this.primaryCommands.length - 1;
+
+                /* Blazor won't trigger "slotchange" event.
+                 * But will update attributes to an existing app bar button.
+                 * One of which is the label so we are listening to this event.
+                 */
+                this.primaryCommands.forEach(command => command.addEventListener("labelchanged", this.handleSlotChange));
+            }
+
+            this.isMovingCommand = false;
+            this.setLabelPosition();
+        }
+
         autoAdjust() {
             const parentWidth = this.parentElement.getClientRects()[0].width;
             const potentialWidth = parentWidth - (this.getLeft() + MORE_BTN_WIDTH + COMMAND_BAR_PADDING);
@@ -646,7 +656,7 @@ const COMMAND_BAR_PADDING = 12;
                 if(index > 0 && command.previous.nodeName === "FLUENT-APP-BAR-SEPARATOR")
                     this.moveCommands(command.previous, this, this.collapsedCommandsContainer);
             }
-
+            
             if(rightIndex !== index && rightCommand.bounds < potentialWidth)
             {
                 if(rightIndex > 0 && rightCommand.previous.nodeName === "FLUENT-APP-BAR-SEPARATOR")
@@ -679,7 +689,7 @@ const COMMAND_BAR_PADDING = 12;
                 let firstSibling = destination.firstChild;
                 destination.insertBefore(command, firstSibling);
             }
-            else
+            else 
             {
                 destination.appendChild(command);
             }
