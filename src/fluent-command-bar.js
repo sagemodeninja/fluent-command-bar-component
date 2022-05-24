@@ -264,8 +264,12 @@ const COMMAND_BAR_PADDING = 12;
         }
 
         setLabel() {
+            const oldLabel = this.contentSpan.textContent;
+
             this.contentSpan.textContent = this.label;
             this.setTitle();
+            
+            if (oldLabel === this.label) return;
 
             /* See comment on usage. */
             this.dispatchEvent(new CustomEvent("labelchanged"));
@@ -541,9 +545,6 @@ const COMMAND_BAR_PADDING = 12;
             });
 
             window.addEventListener("resize", this.autoAdjust);
-            window.addEventListener("DOMContentLoaded", e => {
-                this.primaryCommandsStore.forEach(this.autoAdjust);
-            });
 
             window.addEventListener("click", () => {
                 this.toggleAttribute("is-open", false);
@@ -578,7 +579,7 @@ const COMMAND_BAR_PADDING = 12;
         }
 
         setCommandAppearance(appearance) {
-            if(this.primaryCommands)
+            if(this.primaryCommands) 
             {
                 this.primaryCommands.forEach(command => {
                     command.setAttribute("appearance", appearance);
@@ -640,15 +641,15 @@ const COMMAND_BAR_PADDING = 12;
         autoAdjust() {
             const parentWidth = this.parentElement.getClientRects()[0].width;
             const potentialWidth = parentWidth - (this.getLeft() + MORE_BTN_WIDTH + COMMAND_BAR_PADDING);
-
-            const index = this.lastVisibleCommandIndex;
+            
             const store = this.primaryCommandsStore;
+            const index = this.lastVisibleCommandIndex;
+            const rightIndex = Math.min(store.length - 1, index + 1);
 
             const command = store[index];
-            const rightIndex = Math.min(store.length - 1, index + 1);
             const rightCommand = store[rightIndex];
 
-            if(index >= 0 && command.bounds > potentialWidth)
+            if(index >= 0 && command.bounds > potentialWidth) 
             {
                 this.moveCommands(command.self, this, this.collapsedCommandsContainer);
                 this.lastVisibleCommandIndex -= 1;
@@ -656,8 +657,8 @@ const COMMAND_BAR_PADDING = 12;
                 if(index > 0 && command.previous.nodeName === "FLUENT-APP-BAR-SEPARATOR")
                     this.moveCommands(command.previous, this, this.collapsedCommandsContainer);
             }
-            
-            if(rightIndex !== index && rightCommand.bounds < potentialWidth)
+
+            if(rightIndex !== index && rightCommand.bounds < potentialWidth) 
             {
                 if(rightIndex > 0 && rightCommand.previous.nodeName === "FLUENT-APP-BAR-SEPARATOR")
                     this.moveCommands(rightCommand.previous, this.collapsedCommandsContainer, this);
@@ -686,9 +687,9 @@ const COMMAND_BAR_PADDING = 12;
 
             if(collapse)
             {
-                let firstSibling = destination.firstChild;
+                const firstSibling = destination.firstChild;
                 destination.insertBefore(command, firstSibling);
-            }
+            } 
             else 
             {
                 destination.appendChild(command);
@@ -699,7 +700,7 @@ const COMMAND_BAR_PADDING = 12;
         }
 
         toggleAttributes(command, toggle) {
-            var attribute;
+            let attribute;
 
             switch(command.nodeName) {
                 case "FLUENT-APP-BAR-BUTTON": attribute = "is-secondary"; break;
