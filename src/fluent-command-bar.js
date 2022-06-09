@@ -179,11 +179,25 @@ const COMMAND_BAR_PADDING = 12;
             this.setAccelerator();
         }
 
+        get title() {
+            return this.getAttribute("title");
+        }
+
+        set title(value) {
+            this.setAttribute("title", value);
+            this.setTitle();
+        }
+
         get disabled() {
             return this.hasAttribute("disabled");
         }
 
         /* DOM */
+        get button() {
+            this._button ??= this.shadowRoot.querySelector(".button");
+            return this._button;
+        }
+        
         get iconSpan() {
             this._iconSpan ??= this.shadowRoot.querySelector(".icon");
             return this._iconSpan;
@@ -264,15 +278,8 @@ const COMMAND_BAR_PADDING = 12;
         }
 
         setLabel() {
-            const oldLabel = this.contentSpan.textContent;
-
             this.contentSpan.textContent = this.label;
             this.setTitle();
-            
-            if (oldLabel === this.label) return;
-
-            /* See comment on usage. */
-            this.dispatchEvent(new CustomEvent("labelchanged"));
         }
 
         setAccelerator() {
@@ -297,7 +304,9 @@ const COMMAND_BAR_PADDING = 12;
 
         setTitle() {
             const accelerator = this.formattedAccelerator ? `(${this.formattedAccelerator})` : "";
-            this.setAttribute("title", `${this.label} ${accelerator}`);
+            let title = this.title ?? this.label ?? "";
+
+            this.button.setAttribute("title", `${title} ${accelerator}`);
         }
 
         setAcceleratorWidth(value) {
@@ -347,8 +356,8 @@ const COMMAND_BAR_PADDING = 12;
     :host {
         display: inline-block;
         height: 46px;
-        user-select: none;
         max-width: 100%;
+        user-select: none;
     }
 
     .command-bar {
@@ -358,13 +367,6 @@ const COMMAND_BAR_PADDING = 12;
         display: flex;
         padding: 6px;
         position: relative;
-    }
-
-    .command-bar.active {
-        background-color: #fff;
-        border: solid 1px #ebebeb;
-        height: auto;
-        padding: 5px;
     }
 
     .primary-commands {
@@ -544,7 +546,8 @@ const COMMAND_BAR_PADDING = 12;
                 });
             });
 
-            window.addEventListener("resize", this.autoAdjust);
+            this.parentResizeObserver = new ResizeObserver(() => this.autoAdjust());
+            this.parentResizeObserver.observe(this.parentElement);
 
             window.addEventListener("click", () => {
                 this.toggleAttribute("is-open", false);
@@ -556,6 +559,10 @@ const COMMAND_BAR_PADDING = 12;
                 case "is-open": this.setIsOpen(); break;
                 case "default-label-position": this.setLabelPosition(); break;
             }
+        }
+
+        disconnectedCallback() {
+            this.parentResizeObserver.disconnect();
         }
 
         setLabelPosition() {
@@ -606,8 +613,15 @@ const COMMAND_BAR_PADDING = 12;
             this.primaryCommands = nodes.filter(command => command instanceof HTMLElement && (command.nodeName === "FLUENT-APP-BAR-BUTTON"));
 
             if (!this.isMovingCommand) {
-                this.primaryCommandsStore = [];
                 this.style.opacity = 0;
+
+                this.primaryCommandsStore = this.primaryCommands.map(command => ({
+                    parent: command.parentElement,
+                    self: command,
+                    previous: command.previousElementSibling,
+                    bounds: command.getClientRects()[0].right - this.getClientRects()[0].left
+                }));
+                this.lastVisibleCommandIndex = this.primaryCommands.length - 1;
 
                 // Waits for primary commands to be stored, then do initial auto adjusting.
                 const initialAdjustInterval = setInterval(() => {
@@ -617,21 +631,7 @@ const COMMAND_BAR_PADDING = 12;
                         this.setMoreButtonVisibility();
                         this.style.opacity = 1;
                     }
-                }, 50);
-
-                this.primaryCommandsStore = this.primaryCommands.map(command => ({
-                    parent: command.parentElement,
-                    self: command,
-                    previous: command.previousElementSibling,
-                    bounds: command.offsetLeft + command.offsetWidth
-                }));
-                this.lastVisibleCommandIndex = this.primaryCommands.length - 1;
-
-                /* Blazor won't trigger "slotchange" event.
-                 * But will update attributes to an existing app bar button.
-                 * One of which is the label so we are listening to this event.
-                 */
-                this.primaryCommands.forEach(command => command.addEventListener("labelchanged", this.handleSlotChange));
+                }, 10);
             }
 
             this.isMovingCommand = false;
@@ -639,17 +639,20 @@ const COMMAND_BAR_PADDING = 12;
         }
 
         autoAdjust() {
+            const store = this.primaryCommandsStore ?? [];
+
+            if (store.length === 0) return;
+
             const parentWidth = this.parentElement.getClientRects()[0].width;
             const potentialWidth = parentWidth - (this.getLeft() + MORE_BTN_WIDTH + COMMAND_BAR_PADDING);
-            
-            const store = this.primaryCommandsStore;
+
             const index = this.lastVisibleCommandIndex;
             const rightIndex = Math.min(store.length - 1, index + 1);
 
             const command = store[index];
             const rightCommand = store[rightIndex];
 
-            if(index >= 0 && command.bounds > potentialWidth) 
+            if(index >= 0 && command.bounds > potentialWidth)
             {
                 this.moveCommands(command.self, this, this.collapsedCommandsContainer);
                 this.lastVisibleCommandIndex -= 1;
@@ -669,13 +672,13 @@ const COMMAND_BAR_PADDING = 12;
         }
 
         getLeft() {
-            if (!this.previousElementSibling)
+            if (!this.previousElementSibling) 
                 return 0;
 
             const parentLeft = this.parentElement.getClientRects()[0].left;
-            const siblingLeft = this.previousElementSibling.getClientRects()[0].left;
+            const siblingRight = this.previousElementSibling.getClientRects()[0].right;
 
-            return (siblingLeft - parentLeft) + this.previousElementSibling.offsetWidth;
+            return siblingRight - parentLeft;
         }
 
         moveCommands(command, origin, destination) {
@@ -685,11 +688,11 @@ const COMMAND_BAR_PADDING = 12;
 
             origin.removeChild(command);
 
-            if(collapse)
+            if(collapse) 
             {
                 const firstSibling = destination.firstChild;
                 destination.insertBefore(command, firstSibling);
-            } 
+            }
             else 
             {
                 destination.appendChild(command);
