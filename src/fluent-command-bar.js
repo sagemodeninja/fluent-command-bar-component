@@ -25,15 +25,13 @@ const COMMAND_BAR_PADDING = 12;
     /* Button */
     .button {
         align-items: center;
-        background-color: transparent;
         border-radius: 5px;
         box-sizing: border-box;
         color: #1b1b1b;
         cursor: default;
         display: flex;
-        height: 36px;
+        gap: 8px;
         min-height: 36px;
-        overflow: hidden;
         padding: 10px;
         position: relative;
     }
@@ -48,6 +46,11 @@ const COMMAND_BAR_PADDING = 12;
         .button:hover {
             background-color: rgba(156 156 156 / 10%);
         }
+    }
+
+    .button:active .icon::part(icon),
+    .button.invoked .icon::part(icon) {
+        color: rgba(27 27 27 / 49%);
     }
 
     :host([disabled]) .button {
@@ -82,31 +85,35 @@ const COMMAND_BAR_PADDING = 12;
         font-size: 12px;
         font-weight: 400;
         font-variation-settings: "wght" 400, "opsz" 16;
-        line-height: 36px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .content:not(:empty) {
-        margin-left: 8px;
-    }
-
-    :host([appearance=bottom]:not([is-secondary])) .content {
         line-height: 1.5;
-        margin-left: 0;
         text-align: center;
-        white-space: normal;
     }
 
+    .content:empty,
     :host([appearance=collapsed]:not([is-secondary])) .content {
         display: none;
     }
 
     :host([is-secondary]) .content {
-        font-family: 'Segoe UI Variable', 'Segoe UI Variable Text', sans-serif;
         font-variation-settings: "wght" 400, "opsz" 20;
         font-size: 14px;
+        text-align: left;
+    }
+
+    .content::before,
+    .content::after {
+        content: '';
+        display: block;
+        height: 0;
+        width: 0;
+    }
+
+    .content::before{
+        margin-top: -5px;
+    }
+
+    .content::after{
+        margin-bottom: -4px;
     }
 
     /* Keyboard accelerator */
@@ -143,7 +150,7 @@ const COMMAND_BAR_PADDING = 12;
         }
 
         static get observedAttributes() {
-            return ["icon", "label", "modifier", "key"];
+            return ["icon", "label", "modifier", "key", "use-accent"];
         }
 
         /* Attributes */
@@ -181,6 +188,16 @@ const COMMAND_BAR_PADDING = 12;
         set key(value) {
             this.setAttribute("key", value);
             this.setAccelerator();
+        }
+
+        get useAccent() {
+            return this.hasAttribute("use-accent") 
+                   && this.getAttribute("use-accent") !== "false"
+        }
+
+        set useAccent(value) {
+            this.setAttribute("use-accent", value);
+            this.setIcon();
         }
 
         get title() {
@@ -266,10 +283,13 @@ const COMMAND_BAR_PADDING = 12;
             });
         }
 
-        attributeChangedCallback(name, oldValue, newValue) {
+        attributeChangedCallback(name) {
             switch (name) {
-                case "icon": this.setIcon(); break;
                 case "label": this.setLabel(); break;
+                case "icon": 
+                case "use-accent": 
+                    this.setIcon(); 
+                    break;
                 case "modifier":
                 case "key":
                     this.setAccelerator();
@@ -279,6 +299,7 @@ const COMMAND_BAR_PADDING = 12;
 
         setIcon() {
             this.iconSpan.setAttribute("symbol", this.icon ?? "");
+            this.iconSpan.toggleAttribute("use-accent", this.useAccent);
         }
 
         setLabel() {
