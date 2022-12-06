@@ -9,6 +9,8 @@ const COMMAND_BAR_PADDING = 12;
         display: inline-block;
         outline: none;
         user-select: none;
+        -webkit-user-select: none;
+        -webkit-tap-highlight-color: #000;
     }
 
     :host([is-secondary]) {
@@ -36,20 +38,20 @@ const COMMAND_BAR_PADDING = 12;
         position: relative;
     }
     
-    .button:active {
-        background-color: rgba(160, 160, 160, 0.06);
-        color: rgba(27, 27, 27, 0.49) !important;
+    .button:active,
+    .button.invoked {
+        background-color: rgba(160 160 160 / 6%);
+        color: rgba(27 27 27 / 49%) !important;
     }
 
     @media (hover: hover) {
-        :host(:focus) .button,
         .button:hover {
-            background-color: rgba(156, 156, 156, 0.1);
+            background-color: rgba(156 156 156 / 10%);
         }
     }
 
     :host([disabled]) .button {
-        color: rgba(27, 27, 27, 0.49) !important;
+        color: rgba(27 27 27 / 49%) !important;
     }
 
     :host([disabled][is-secondary]) .button {
@@ -76,9 +78,10 @@ const COMMAND_BAR_PADDING = 12;
     /* Content */
     .content {
         flex-grow: 1;
-        font-family: 'Segoe UI Variable Small', sans-serif;
+        font-family: 'Segoe UI Variable', 'Segoe UI Variable Small', sans-serif;
         font-size: 12px;
         font-weight: 400;
+        font-variation-settings: "wght" 400, "opsz" 16;
         line-height: 36px;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -101,7 +104,8 @@ const COMMAND_BAR_PADDING = 12;
     }
 
     :host([is-secondary]) .content {
-        font-family: 'Segoe UI Variable Text', sans-serif;
+        font-family: 'Segoe UI Variable', 'Segoe UI Variable Text', sans-serif;
+        font-variation-settings: "wght" 400, "opsz" 20;
         font-size: 14px;
     }
 
@@ -119,7 +123,7 @@ const COMMAND_BAR_PADDING = 12;
     }
 
     :host([disabled]) .keyboard-accelerator {
-        color: rgba(27, 27, 27, 0.49) !important;
+        color: rgba(27 27 27 / 49%) !important;
     }
     </style>
     <div class='button'>
@@ -295,8 +299,14 @@ const COMMAND_BAR_PADDING = 12;
                 : this.supportedKey;
 
             Mousetrap.bind(accelerator, e => {
-                if(!this.disabled)
+                if (!this.disabled)
+                {
                     this.click();
+
+                    // Visual cue
+                    this.button.classList.add("invoked");
+                    setTimeout(() => this.button.classList.remove("invoked"), 150);   
+                }
 
                 return false;
             });
@@ -314,6 +324,8 @@ const COMMAND_BAR_PADDING = 12;
         }
     }
 
+    // SEE: https://css-tricks.com/snippets/css/remove-gray-highlight-when-tapping-links-in-mobile-safari/
+    document.addEventListener("touchstart", function(){}, true);
     customElements.define("fluent-app-bar-button", FluentAppBarButton);
 })();
 
@@ -396,12 +408,12 @@ const COMMAND_BAR_PADDING = 12;
     }
     
     .more-button:hover {
-        background-color: rgba(156, 156, 156, 0.1);
+        background-color: rgba(156 156 156 / 10%);
     }
     
     .more-button:active {
-        background-color: rgba(160, 160, 160, 0.06);
-        color: rgba(27, 27, 27, 0.49) !important;
+        background-color: rgba(160 160 160 / 6%);
+        color: rgba(27 27 27 / 49%) !important;
     }
     
     .more-button fluent-symbol-icon {
@@ -412,7 +424,7 @@ const COMMAND_BAR_PADDING = 12;
     .secondary-commands {
         background-color: #fff;
         border-radius: 5px;
-        box-shadow: 0 0 2px rgba(0, 0, 0, 0.2), 0 calc(32 * 0.5px) calc((32 * 1px)) rgba(0, 0, 0, 0.24);
+        box-shadow: 0 0 2px rgba(0 0 0 / 20%), 0 calc(32 * 0.5px) calc((32 * 1px)) rgba(0 0 0 / 24%);
         display: none;
         flex-direction: column;
         margin-top: 5px;
