@@ -560,7 +560,7 @@ const COMMAND_BAR_PADDING = 12;
             // Event listeners
             this.moreButton.addEventListener("click", e => {
                 if (this.customMenu)
-                    this.dispatchEvent(new CustomEvent("menu-invoked"));
+                    this.dispatchEvent(new CustomEvent("menuinvoked"));
                 else
                     this.setAttribute("is-open", !this.isOpen);
 
@@ -743,7 +743,7 @@ const COMMAND_BAR_PADDING = 12;
                 destination.appendChild(command);
             }
 
-            // Command-moved event.
+            // commandmoved event.
             var eventOptions = {
                 detail: {
                     type: command.nodeName,
@@ -751,7 +751,7 @@ const COMMAND_BAR_PADDING = 12;
                     collapsed: collapse
                 }
             };
-            var customEvent = new CustomEvent("command-moved", eventOptions);
+            var customEvent = new CustomEvent("commandmoved", eventOptions);
             this.dispatchEvent(customEvent);
 
             this.toggleAttributes(command, collapse);
