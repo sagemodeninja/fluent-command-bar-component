@@ -426,6 +426,8 @@ const COMMAND_BAR_PADDING = 12;
         min-height: 36px;
         padding: 0 3px;
         position: relative;
+        user-select: none;
+        -webkit-user-select: none;
     }
     
     .more-button:hover {
@@ -497,7 +499,7 @@ const COMMAND_BAR_PADDING = 12;
         }
 
         static get observedAttributes() {
-            return ["is-open", "default-label-position"];
+            return ["is-open", "default-label-position", "custom-menu"];
         }
 
         /* Attributes */
@@ -512,6 +514,15 @@ const COMMAND_BAR_PADDING = 12;
 
         get isOpen() {
             return this.hasAttribute("is-open") && eval(this.getAttribute("is-open"));
+        }
+
+        get customMenu() {
+            return this.hasAttribute("custom-menu") 
+                   && this.getAttribute("custom-menu") !== "false"
+        }
+
+        set customMenu(value) {
+            this.setAttribute("custom-menu", value);
         }
 
         /* DOM */
@@ -548,7 +559,11 @@ const COMMAND_BAR_PADDING = 12;
         connectedCallback() {
             // Event listeners
             this.moreButton.addEventListener("click", e => {
-                this.setAttribute("is-open", !this.isOpen);
+                if (this.customMenu)
+                    this.dispatchEvent(new CustomEvent("menu-invoked"));
+                else
+                    this.setAttribute("is-open", !this.isOpen);
+
                 e.stopPropagation();
             });
 
@@ -587,7 +602,7 @@ const COMMAND_BAR_PADDING = 12;
             });
         }
 
-        attributeChangedCallback(name, oldValue, newValue) {
+        attributeChangedCallback(name) {
             switch (name) {
                 case "is-open": this.setIsOpen(); break;
                 case "default-label-position": this.setLabelPosition(); break;
@@ -609,7 +624,7 @@ const COMMAND_BAR_PADDING = 12;
             }
 
             if(this.setCommandAppearance(appearance))
-                return;
+                return; 
 
             // Waits for primary commands to be stored, then set appearance.
             const waitInterval = setInterval(() => {
@@ -619,7 +634,7 @@ const COMMAND_BAR_PADDING = 12;
         }
 
         setCommandAppearance(appearance) {
-            if(this.primaryCommands) 
+            if(this.primaryCommands)
             {
                 this.primaryCommands.forEach(command => {
                     command.setAttribute("appearance", appearance);
@@ -721,15 +736,23 @@ const COMMAND_BAR_PADDING = 12;
 
             origin.removeChild(command);
 
-            if(collapse) 
-            {
+            if(collapse)  {
                 const firstSibling = destination.firstChild;
                 destination.insertBefore(command, firstSibling);
-            }
-            else 
-            {
+            } else {
                 destination.appendChild(command);
             }
+
+            // Command-moved event.
+            var eventOptions = {
+                detail: {
+                    type: command.nodeName,
+                    command: command.dataset.command ?? null,
+                    collapsed: collapse
+                }
+            };
+            var customEvent = new CustomEvent("command-moved", eventOptions);
+            this.dispatchEvent(customEvent);
 
             this.toggleAttributes(command, collapse);
             this.setMoreButtonVisibility();
