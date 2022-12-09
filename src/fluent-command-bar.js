@@ -560,7 +560,7 @@ const COMMAND_BAR_PADDING = 12;
             // Event listeners
             this.moreButton.addEventListener("click", e => {
                 if (this.customMenu)
-                    this.dispatchEvent(new CustomEvent("menuinvoked"));
+                    this.dispatchEvent(new CustomEvent("menuinvoked", { bubbles: true }));
                 else
                     this.setAttribute("is-open", !this.isOpen);
 
@@ -745,6 +745,7 @@ const COMMAND_BAR_PADDING = 12;
 
             // commandmoved event.
             var eventOptions = {
+                bubbles: true,
                 detail: {
                     type: command.nodeName,
                     command: command.dataset.command ?? null,
