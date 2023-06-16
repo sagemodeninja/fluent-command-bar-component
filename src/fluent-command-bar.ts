@@ -1,8 +1,8 @@
 const MORE_BTN_WIDTH = 47;
 const COMMAND_BAR_PADDING = 12;
 
-(function() {
-    const template = document.createElement("template");
+(function () {
+    const template = document.createElement('template');
     template.innerHTML = `
     <style>
     :host {
@@ -145,137 +145,138 @@ const COMMAND_BAR_PADDING = 12;
         constructor() {
             super();
 
-            this.attachShadow({ mode: "open" });
+            this.attachShadow({ mode: 'open' });
             this.shadowRoot.append(template.content.cloneNode(true));
         }
 
         static get observedAttributes() {
-            return ["icon", "label", "modifier", "key", "use-accent"];
+            return ['icon', 'label', 'modifier', 'key', 'use-accent'];
         }
 
         /* Attributes */
         get icon() {
-            return this.getAttribute("icon");
+            return this.getAttribute('icon');
         }
 
         set icon(value) {
-            this.setAttribute("icon", value);
+            this.setAttribute('icon', value);
             this.setIcon();
         }
 
         get label() {
-            return this.getAttribute("label");
+            return this.getAttribute('label');
         }
 
         set label(value) {
-            this.setAttribute("label", value);
+            this.setAttribute('label', value);
             this.setLabel();
         }
 
         get modifier() {
-            return this.getAttribute("modifier");
+            return this.getAttribute('modifier');
         }
 
         set modifier(value) {
-            this.setAttribute("modifier", value);
+            this.setAttribute('modifier', value);
             this.setAccelerator();
         }
 
         get key() {
-            return this.getAttribute("key");
+            return this.getAttribute('key');
         }
 
         set key(value) {
-            this.setAttribute("key", value);
+            this.setAttribute('key', value);
             this.setAccelerator();
         }
 
         get useAccent() {
-            return this.hasAttribute("use-accent") 
-                   && this.getAttribute("use-accent") !== "false"
+            return this.hasAttribute('use-accent') && this.getAttribute('use-accent') !== 'false';
         }
 
         set useAccent(value) {
-            this.setAttribute("use-accent", value);
+            this.setAttribute('use-accent', value);
             this.setIcon();
         }
 
         get title() {
-            return this.getAttribute("title");
+            return this.getAttribute('title');
         }
 
         set title(value) {
-            this.setAttribute("title", value);
+            this.setAttribute('title', value);
             this.setTitle();
         }
 
         get disabled() {
-            return this.hasAttribute("disabled");
+            return this.hasAttribute('disabled');
         }
 
         /* DOM */
         get button() {
-            this._button ??= this.shadowRoot.querySelector(".button");
+            this._button ??= this.shadowRoot.querySelector('.button');
             return this._button;
         }
-        
+
         get iconSpan() {
-            this._iconSpan ??= this.shadowRoot.querySelector(".icon");
+            this._iconSpan ??= this.shadowRoot.querySelector('.icon');
             return this._iconSpan;
         }
 
         get customIconSlot() {
-            this._customIconSpan ??= this.shadowRoot.querySelector("slot[name=icon]");
+            this._customIconSpan ??= this.shadowRoot.querySelector('slot[name=icon]');
             return this._customIconSpan;
         }
 
         get contentSpan() {
-            this._contentSpan ??= this.shadowRoot.querySelector(".content");
+            this._contentSpan ??= this.shadowRoot.querySelector('.content');
             return this._contentSpan;
         }
 
         get acceleratorSpan() {
-            this._acceleratorSpan ??= this.shadowRoot.querySelector(".keyboard-accelerator");
+            this._acceleratorSpan ??= this.shadowRoot.querySelector('.keyboard-accelerator');
             return this._acceleratorSpan;
         }
 
         /* Helpers */
         get formattedModifier() {
-            return this.modifier.replace("Control", "Ctrl");
+            return this.modifier.replace('Control', 'Ctrl');
         }
 
         get formattedAccelerator() {
-            return this.modifier
-                ? this.formattedModifier + "+" + this.key
-                : this.key;
+            return this.modifier ? this.formattedModifier + '+' + this.key : this.key;
         }
 
         get supportedModifier() {
-            return this.modifier.toLowerCase().replace("control", "mod");
+            return this.modifier.toLowerCase().replace('control', 'mod');
         }
 
         get supportedKey() {
-            return this.key.toLowerCase().replace("delete", "del").replace("+", "=").replace("escape", "esc");
+            return this.key
+                .toLowerCase()
+                .replace('delete', 'del')
+                .replace('+', '=')
+                .replace('escape', 'esc');
         }
 
         connectedCallback() {
             this.setIcon();
             this.setLabel();
 
-            this.setAttribute("tabindex", "0");
+            this.setAttribute('tabindex', '0');
 
             // Event listeners
-            this.customIconSlot.addEventListener("slotchange", e => {
+            this.customIconSlot.addEventListener('slotchange', e => {
                 const nodes = this.customIconSlot.assignedNodes();
                 const hasCustomIcons = nodes.length > 0;
 
-                this.iconSpan.style.display = hasCustomIcons ? "none" : "inline-block";
-                this.customIconSlot.style.display = hasCustomIcons ? "default" : "none";
+                this.iconSpan.style.display = hasCustomIcons ? 'none' : 'inline-block';
+                this.customIconSlot.style.display = hasCustomIcons ? 'default' : 'none';
 
                 // Custom icon causes click events to stop at the icon.
                 // This will bubble it further to the button itself.
                 nodes.forEach(e => {
-                    e.addEventListener("click", e=> {
+                    e.addEventListener('click', e => {
                         this.click();
                         e.stopPropagation();
                     });
@@ -285,21 +286,23 @@ const COMMAND_BAR_PADDING = 12;
 
         attributeChangedCallback(name) {
             switch (name) {
-                case "label": this.setLabel(); break;
-                case "icon": 
-                case "use-accent": 
-                    this.setIcon(); 
+                case 'label':
+                    this.setLabel();
                     break;
-                case "modifier":
-                case "key":
+                case 'icon':
+                case 'use-accent':
+                    this.setIcon();
+                    break;
+                case 'modifier':
+                case 'key':
                     this.setAccelerator();
                     break;
             }
         }
 
         setIcon() {
-            this.iconSpan.setAttribute("symbol", this.icon ?? "");
-            this.iconSpan.toggleAttribute("use-accent", this.useAccent);
+            this.iconSpan.setAttribute('symbol', this.icon ?? '');
+            this.iconSpan.toggleAttribute('use-accent', this.useAccent);
         }
 
         setLabel() {
@@ -308,25 +311,23 @@ const COMMAND_BAR_PADDING = 12;
         }
 
         setAccelerator() {
-            if(!this.key)
-                return;
+            if (!this.key) return;
 
-            this.acceleratorSpan.textContent = this.formattedAccelerator ?? "";
+            this.acceleratorSpan.textContent = this.formattedAccelerator ?? '';
             this.setTitle();
 
             // Keyboard accelerator.
             var accelerator = this.modifier
-                ? this.supportedModifier + "+" + this.supportedKey
+                ? this.supportedModifier + '+' + this.supportedKey
                 : this.supportedKey;
 
             Mousetrap.bind(accelerator, e => {
-                if (!this.disabled)
-                {
+                if (!this.disabled) {
                     this.click();
 
                     // Visual cue
-                    this.button.classList.add("invoked");
-                    setTimeout(() => this.button.classList.remove("invoked"), 150);   
+                    this.button.classList.add('invoked');
+                    setTimeout(() => this.button.classList.remove('invoked'), 150);
                 }
 
                 return false;
@@ -334,24 +335,24 @@ const COMMAND_BAR_PADDING = 12;
         }
 
         setTitle() {
-            const accelerator = this.formattedAccelerator ? `(${this.formattedAccelerator})` : "";
-            let title = this.title ?? this.label ?? "";
+            const accelerator = this.formattedAccelerator ? `(${this.formattedAccelerator})` : '';
+            let title = this.title ?? this.label ?? '';
 
-            this.button.setAttribute("title", `${title} ${accelerator}`);
+            this.button.setAttribute('title', `${title} ${accelerator}`);
         }
 
         setAcceleratorWidth(value) {
-            this.acceleratorSpan.style.width = value + "px";
+            this.acceleratorSpan.style.width = value + 'px';
         }
     }
 
     // SEE: https://css-tricks.com/snippets/css/remove-gray-highlight-when-tapping-links-in-mobile-safari/
-    document.addEventListener("touchstart", function(){}, true);
-    customElements.define("fluent-app-bar-button", FluentAppBarButton);
+    document.addEventListener('touchstart', function () {}, true);
+    customElements.define('fluent-app-bar-button', FluentAppBarButton);
 })();
 
-(function() {
-    const template = document.createElement("template");
+(function () {
+    const template = document.createElement('template');
     template.innerHTML = `
     <style>
     :host {
@@ -374,16 +375,16 @@ const COMMAND_BAR_PADDING = 12;
         constructor() {
             super();
 
-            this.attachShadow({ mode: "open" });
+            this.attachShadow({ mode: 'open' });
             this.shadowRoot.append(template.content.cloneNode(true));
         }
     }
 
-    customElements.define("fluent-app-bar-separator", FluentAppBarSeparator);
+    customElements.define('fluent-app-bar-separator', FluentAppBarSeparator);
 })();
 
-(function() {
-    const template = document.createElement("template");
+(function () {
+    const template = document.createElement('template');
     template.innerHTML = `
     <style>
     :host {
@@ -487,7 +488,7 @@ const COMMAND_BAR_PADDING = 12;
         constructor() {
             super();
 
-            this.attachShadow({ mode: "open" });
+            this.attachShadow({ mode: 'open' });
             this.shadowRoot.append(template.content.cloneNode(true));
 
             this.setCommandAppearance = this.setCommandAppearance.bind(this);
@@ -499,113 +500,121 @@ const COMMAND_BAR_PADDING = 12;
         }
 
         static get observedAttributes() {
-            return ["is-open", "default-label-position", "custom-menu"];
+            return ['is-open', 'default-label-position', 'custom-menu'];
         }
 
         /* Attributes */
         get defaultLabelPosition() {
-            return this.getAttribute("default-label-position") ?? "right";
+            return this.getAttribute('default-label-position') ?? 'right';
         }
 
         set defaultLabelPosition(value) {
-            this.setAttribute("default-label-position", value);
+            this.setAttribute('default-label-position', value);
             this.setLabelPosition();
         }
 
         get isOpen() {
-            return this.hasAttribute("is-open") && eval(this.getAttribute("is-open"));
+            return this.hasAttribute('is-open') && eval(this.getAttribute('is-open'));
         }
 
         get customMenu() {
-            return this.hasAttribute("custom-menu") 
-                   && this.getAttribute("custom-menu") !== "false"
+            return this.hasAttribute('custom-menu') && this.getAttribute('custom-menu') !== 'false';
         }
 
         set customMenu(value) {
-            this.setAttribute("custom-menu", value);
+            this.setAttribute('custom-menu', value);
         }
 
         /* DOM */
         get commandBar() {
-            this._commandBar ??= this.shadowRoot.querySelector(".command-bar");
+            this._commandBar ??= this.shadowRoot.querySelector('.command-bar');
             return this._commandBar;
         }
 
         get primaryCommandsContainer() {
-            this._primaryCommandsContainer ??= this.shadowRoot.querySelector(".primary-commands");
+            this._primaryCommandsContainer ??= this.shadowRoot.querySelector('.primary-commands');
             return this._primaryCommandsContainer;
         }
 
         get primaryCommandsSlot() {
-            this._primaryCommandsSlot ??= this.shadowRoot.querySelector(".primary-commands slot");
+            this._primaryCommandsSlot ??= this.shadowRoot.querySelector('.primary-commands slot');
             return this._primaryCommandsSlot;
         }
 
         get moreButton() {
-            this._moreButton ??= this.shadowRoot.querySelector(".more-button");
+            this._moreButton ??= this.shadowRoot.querySelector('.more-button');
             return this._moreButton;
         }
 
         get secondaryCommandsSlot() {
-            this._secondaryCommandsSlot ??= this.shadowRoot.querySelector("slot[name=secondary-commands]");
+            this._secondaryCommandsSlot ??= this.shadowRoot.querySelector(
+                'slot[name=secondary-commands]'
+            );
             return this._secondaryCommandsSlot;
         }
 
         get collapsedCommandsContainer() {
-            this._collapsedCommandsContainer ??= this.shadowRoot.querySelector(".collapsed-commands");
+            this._collapsedCommandsContainer ??=
+                this.shadowRoot.querySelector('.collapsed-commands');
             return this._collapsedCommandsContainer;
         }
 
         connectedCallback() {
             // Event listeners
-            this.moreButton.addEventListener("click", e => {
+            this.moreButton.addEventListener('click', e => {
                 if (this.customMenu)
-                    this.dispatchEvent(new CustomEvent("menuinvoked", { bubbles: true }));
-                else
-                    this.setAttribute("is-open", !this.isOpen);
+                    this.dispatchEvent(new CustomEvent('menuinvoked', { bubbles: true }));
+                else this.setAttribute('is-open', !this.isOpen);
 
                 e.stopPropagation();
             });
 
-            this.primaryCommandsSlot.addEventListener("slotchange", this.handleSlotChange);
+            this.primaryCommandsSlot.addEventListener('slotchange', this.handleSlotChange);
 
-            this.secondaryCommandsSlot.addEventListener("slotchange", e => {
+            this.secondaryCommandsSlot.addEventListener('slotchange', e => {
                 this.secondaryContainer = this.secondaryCommandsSlot.assignedNodes()[0];
 
                 this.setMoreButtonVisibility();
 
-                if(!this.secondaryContainer)
-                    return;
+                if (!this.secondaryContainer) return;
 
-                var commands = this.secondaryContainer.querySelectorAll("fluent-app-bar-button");
-                var separators = this.secondaryContainer.querySelectorAll("fluent-app-bar-separator");
+                var commands = this.secondaryContainer.querySelectorAll('fluent-app-bar-button');
+                var separators = this.secondaryContainer.querySelectorAll(
+                    'fluent-app-bar-separator'
+                );
 
                 // Calculate width of accelerator labels based on longest length.
-                const longest = Array.from(commands).reduce((a, b) => a.formattedAccelerator.length > b.formattedAccelerator.length ? a : b);
+                const longest = Array.from(commands).reduce((a, b) =>
+                    a.formattedAccelerator.length > b.formattedAccelerator.length ? a : b
+                );
                 const acceleratorWidth = longest.formattedAccelerator.length * 6;
 
                 commands.forEach(command => {
-                    command.toggleAttribute("is-secondary", true);
+                    command.toggleAttribute('is-secondary', true);
                     command.setAcceleratorWidth(acceleratorWidth);
                 });
 
                 separators.forEach(separator => {
-                    separator.toggleAttribute("horizontal", true);
+                    separator.toggleAttribute('horizontal', true);
                 });
             });
 
             this.parentResizeObserver = new ResizeObserver(() => this.autoAdjust());
             this.parentResizeObserver.observe(this.parentElement);
 
-            window.addEventListener("click", () => {
-                this.toggleAttribute("is-open", false);
+            window.addEventListener('click', () => {
+                this.toggleAttribute('is-open', false);
             });
         }
 
         attributeChangedCallback(name) {
             switch (name) {
-                case "is-open": this.setIsOpen(); break;
-                case "default-label-position": this.setLabelPosition(); break;
+                case 'is-open':
+                    this.setIsOpen();
+                    break;
+                case 'default-label-position':
+                    this.setLabelPosition();
+                    break;
             }
         }
 
@@ -614,17 +623,15 @@ const COMMAND_BAR_PADDING = 12;
         }
 
         setLabelPosition() {
-            if(!["bottom", "collapsed", "right"].includes(this.defaultLabelPosition))
-                return;
+            if (!['bottom', 'collapsed', 'right'].includes(this.defaultLabelPosition)) return;
 
             var appearance = this.defaultLabelPosition;
 
-            if(appearance === "bottom" && !this.isOpen) {
-                appearance = "collapsed";
+            if (appearance === 'bottom' && !this.isOpen) {
+                appearance = 'collapsed';
             }
 
-            if(this.setCommandAppearance(appearance))
-                return; 
+            if (this.setCommandAppearance(appearance)) return;
 
             // Waits for primary commands to be stored, then set appearance.
             const waitInterval = setInterval(() => {
@@ -634,10 +641,9 @@ const COMMAND_BAR_PADDING = 12;
         }
 
         setCommandAppearance(appearance) {
-            if(this.primaryCommands)
-            {
+            if (this.primaryCommands) {
                 this.primaryCommands.forEach(command => {
-                    command.setAttribute("appearance", appearance);
+                    command.setAttribute('appearance', appearance);
                 });
 
                 return true;
@@ -647,18 +653,23 @@ const COMMAND_BAR_PADDING = 12;
         }
 
         setMoreButtonVisibility() {
-            const hasCommands = (this.secondaryContainer && this.secondaryContainer.children.length) || this.collapsedCommandsContainer.children.length;
-            this.moreButton.style.display = hasCommands ? "flex" : "none";
+            const hasCommands =
+                (this.secondaryContainer && this.secondaryContainer.children.length) ||
+                this.collapsedCommandsContainer.children.length;
+            this.moreButton.style.display = hasCommands ? 'flex' : 'none';
         }
 
         setIsOpen() {
-            this.commandBar.classList.toggle("active", this.isOpen);
+            this.commandBar.classList.toggle('active', this.isOpen);
             this.setLabelPosition();
         }
 
         handleSlotChange() {
             const nodes = this.primaryCommandsSlot.assignedNodes();
-            this.primaryCommands = nodes.filter(command => command instanceof HTMLElement && (command.nodeName === "FLUENT-APP-BAR-BUTTON"));
+            this.primaryCommands = nodes.filter(
+                command =>
+                    command instanceof HTMLElement && command.nodeName === 'FLUENT-APP-BAR-BUTTON'
+            );
 
             if (!this.isMovingCommand) {
                 this.style.opacity = 0;
@@ -667,7 +678,7 @@ const COMMAND_BAR_PADDING = 12;
                     parent: command.parentElement,
                     self: command,
                     previous: command.previousElementSibling,
-                    bounds: command.getClientRects()[0].right - this.getClientRects()[0].left
+                    bounds: command.getClientRects()[0].right - this.getClientRects()[0].left,
                 }));
                 this.lastVisibleCommandIndex = this.primaryCommands.length - 1;
 
@@ -692,7 +703,8 @@ const COMMAND_BAR_PADDING = 12;
             if (store.length === 0) return;
 
             const parentWidth = this.parentElement.getClientRects()[0].width;
-            const potentialWidth = parentWidth - (this.getLeft() + MORE_BTN_WIDTH + COMMAND_BAR_PADDING);
+            const potentialWidth =
+                parentWidth - (this.getLeft() + MORE_BTN_WIDTH + COMMAND_BAR_PADDING);
 
             const index = this.lastVisibleCommandIndex;
             const rightIndex = Math.min(store.length - 1, index + 1);
@@ -700,18 +712,16 @@ const COMMAND_BAR_PADDING = 12;
             const command = store[index];
             const rightCommand = store[rightIndex];
 
-            if(index >= 0 && command.bounds > potentialWidth)
-            {
+            if (index >= 0 && command.bounds > potentialWidth) {
                 this.moveCommands(command.self, this, this.collapsedCommandsContainer);
                 this.lastVisibleCommandIndex -= 1;
 
-                if(index > 0 && command.previous.nodeName === "FLUENT-APP-BAR-SEPARATOR")
+                if (index > 0 && command.previous.nodeName === 'FLUENT-APP-BAR-SEPARATOR')
                     this.moveCommands(command.previous, this, this.collapsedCommandsContainer);
             }
 
-            if(rightIndex !== index && rightCommand.bounds < potentialWidth) 
-            {
-                if(rightIndex > 0 && rightCommand.previous.nodeName === "FLUENT-APP-BAR-SEPARATOR")
+            if (rightIndex !== index && rightCommand.bounds < potentialWidth) {
+                if (rightIndex > 0 && rightCommand.previous.nodeName === 'FLUENT-APP-BAR-SEPARATOR')
                     this.moveCommands(rightCommand.previous, this.collapsedCommandsContainer, this);
 
                 this.moveCommands(rightCommand.self, this.collapsedCommandsContainer, this);
@@ -720,8 +730,7 @@ const COMMAND_BAR_PADDING = 12;
         }
 
         getLeft() {
-            if (!this.previousElementSibling) 
-                return 0;
+            if (!this.previousElementSibling) return 0;
 
             const parentLeft = this.parentElement.getClientRects()[0].left;
             const siblingRight = this.previousElementSibling.getClientRects()[0].right;
@@ -736,7 +745,7 @@ const COMMAND_BAR_PADDING = 12;
 
             origin.removeChild(command);
 
-            if(collapse)  {
+            if (collapse) {
                 const firstSibling = destination.firstChild;
                 destination.insertBefore(command, firstSibling);
             } else {
@@ -749,10 +758,10 @@ const COMMAND_BAR_PADDING = 12;
                 detail: {
                     type: command.nodeName,
                     command: command.dataset.command ?? null,
-                    collapsed: collapse
-                }
+                    collapsed: collapse,
+                },
             };
-            var customEvent = new CustomEvent("commandmoved", eventOptions);
+            var customEvent = new CustomEvent('commandmoved', eventOptions);
             this.dispatchEvent(customEvent);
 
             this.toggleAttributes(command, collapse);
@@ -762,14 +771,18 @@ const COMMAND_BAR_PADDING = 12;
         toggleAttributes(command, toggle) {
             let attribute;
 
-            switch(command.nodeName) {
-                case "FLUENT-APP-BAR-BUTTON": attribute = "is-secondary"; break;
-                case "FLUENT-APP-BAR-SEPARATOR": attribute = "horizontal"; break;
+            switch (command.nodeName) {
+                case 'FLUENT-APP-BAR-BUTTON':
+                    attribute = 'is-secondary';
+                    break;
+                case 'FLUENT-APP-BAR-SEPARATOR':
+                    attribute = 'horizontal';
+                    break;
             }
 
             command.toggleAttribute(attribute, toggle);
         }
     }
 
-    customElements.define("fluent-command-bar", FluentCommandBar);
+    customElements.define('fluent-command-bar', FluentCommandBar);
 })();
