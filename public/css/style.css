@@ -1,0 +1,10 @@
+body {
+    background-color: var(--background-fill-mica-base);
+    color: var(--fill-text-primary);
+    color-scheme: light;
+    font-family: 'Segoe UI Variable', sans-serif;
+}
+
+body.dark {
+    color-scheme: dark;
+}

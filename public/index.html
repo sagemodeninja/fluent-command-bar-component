@@ -3,9 +3,6 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="src/fonts/segoe-fluent-icons/segoe-fluent-icons.css">
-        <link rel="stylesheet" href="src/fonts/segoe-ui-variable/segoe-ui-variable.css">
-        <link rel="stylesheet" href="src/css/style.css">
         <title>Command Bar - Demo</title>
     </head>
     <body>
@@ -13,13 +10,14 @@
         <fluent-app-bar-button icon="AttachCamera" appearance="bottom" label="Attach Camera"></fluent-app-bar-button>
         <fluent-app-bar-button icon="Like" label="Like" appearance="collapsed"></fluent-app-bar-button>
         <fluent-app-bar-button icon="Dislike" label="Dislike"></fluent-app-bar-button>
+        <fluent-app-bar-button id="mode_command" icon="Brightness" label="Toggle Mode"></fluent-app-bar-button>
 
         <p>AppBarButton w/o Label</p>
         <fluent-app-bar-button icon="Edit" modifier="Control" key="Z"></fluent-app-bar-button>
 
         <p>AppBarSeparator</p>
         <div>
-            <fluent-command-bar style="background-color: #fff; border: solid 1px #ebebeb;">
+            <fluent-command-bar>
                 <fluent-app-bar-button icon="Add" label="Add"></fluent-app-bar-button>
                 <fluent-app-bar-separator></fluent-app-bar-separator>
                 <fluent-app-bar-button icon="Edit" label="Edit"></fluent-app-bar-button>
@@ -52,10 +50,5 @@
         </div>
 
         <p id="debug" style="display: none;"></p>
-        
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/mousetrap/1.6.5/mousetrap.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/gh/sagemodeninja/fluent-icon-element-component@v1.1.0/src/fluent-icon-element.js"></script>
-        <script src="../src/fluent-command-bar.js"></script>
-        <script src="src/js/script.js"></script>
     </body>
 </html>
