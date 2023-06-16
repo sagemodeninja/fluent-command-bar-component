@@ -1,6 +1,6 @@
 {
     "name": "@sagemodeninja/fluent-command-bar-component",
-    "version": "1.6.0-alpha.1",
+    "version": "1.6.0",
     "description": "Web component implementation of Windows 11's Command Bar.",
     "main": "dist/fluent-command-bar-component.js",
     "types": "src/@types/fluent-command-bar-component.d.ts",
@@ -36,6 +36,7 @@
     "devDependencies": {
         "@sagemodeninja/color-scheme-provider": "^1.0.0",
         "@sagemodeninja/design-token-provider": "^0.1.1-alpha.4",
+        "@types/mousetrap": "^1.6.11",
         "css-loader": "^6.7.3",
         "html-webpack-plugin": "^5.5.1",
         "mini-css-extract-plugin": "^2.7.5",
@@ -48,6 +49,8 @@
         "webpack-dev-server": "^4.13.3"
     },
     "dependencies": {
-        "@sagemodeninja/custom-component": "^1.0.0-beta.3"
+        "@sagemodeninja/custom-component": "^1.0.0-beta.3",
+        "@sagemodeninja/fluent-icon-element-component": "^1.2.0-alpha.1",
+        "mousetrap": "^1.6.5"
     }
 }
