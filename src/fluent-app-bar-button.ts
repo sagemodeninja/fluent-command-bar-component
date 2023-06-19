@@ -47,11 +47,6 @@ export class FluentAppBarButton extends CustomComponent {
             }
         }
 
-        .button:active .icon::part(icon),
-        .button.invoked .icon::part(icon) {
-            color: var(--fill-text-secondary);
-        }
-
         :host([disabled]) .button {
             color: var(--fill-text-disabled);
         }
@@ -70,6 +65,15 @@ export class FluentAppBarButton extends CustomComponent {
         :host([appearance=collapsed]:not([is-secondary])) .button {
             justify-content: center;
             width: 64px;
+        }
+
+        .button:active .icon[use-accent]::part(icon),
+        .button.invoked .icon[use-accent]::part(icon) {
+            color: color-mix(in srgb, var(--fill-accent-default), transparent 10%);
+        }
+
+        :host([disabled]) .icon::part(icon) {
+            color: var(--fill-text-disabled);
         }
 
         /* Custom icon */
