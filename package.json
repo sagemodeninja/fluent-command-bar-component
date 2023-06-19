@@ -1,6 +1,6 @@
 {
     "name": "@sagemodeninja/fluent-command-bar-component",
-    "version": "1.6.0",
+    "version": "1.6.1",
     "description": "Web component implementation of Windows 11's Command Bar.",
     "main": "dist/fluent-command-bar-component.js",
     "types": "src/@types/fluent-command-bar-component.d.ts",
