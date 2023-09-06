@@ -89,6 +89,7 @@ export class FluentAppBarButton extends CustomComponent {
             font-variation-settings: "wght" 400, "opsz" 16;
             line-height: 1.5;
             text-align: center;
+            white-space: nowrap;
         }
 
         .content:empty,
@@ -163,6 +164,14 @@ export class FluentAppBarButton extends CustomComponent {
     set label(value) {
         this.setAttribute('label', value);
         this.setLabel();
+    }
+
+    get command() {
+        return this.getAttribute('command');
+    }
+
+    set command(value) {
+        this.setAttribute('command', value);
     }
 
     get modifier() {
@@ -347,6 +356,12 @@ export class FluentAppBarButton extends CustomComponent {
 
     setAcceleratorWidth(value) {
         this.acceleratorSpan.style.width = value + 'px';
+    }
+}
+
+declare global {
+    interface HTMLElementTagNameMap {
+        'fluent-app-bar-button': FluentAppBarButton;
     }
 }
 

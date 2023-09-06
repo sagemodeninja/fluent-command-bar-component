@@ -22,3 +22,9 @@ export class FluentAppBarSeparator extends CustomComponent {
         return ``;
     }
 }
+
+declare global {
+    interface HTMLElementTagNameMap {
+        'fluent-app-bar-separator': FluentAppBarSeparator;
+    }
+}

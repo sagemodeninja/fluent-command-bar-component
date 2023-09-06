@@ -1,5 +1,6 @@
 import { CustomComponent, customComponent } from '@sagemodeninja/custom-component';
 import { FluentAppBarButton } from './fluent-app-bar-button';
+import { autoUpdate, computePosition, offset, flip, shift } from '@floating-ui/dom';
 
 const MORE_BTN_WIDTH = 47;
 const COMMAND_BAR_PADDING = 12;
@@ -73,14 +74,10 @@ export class FluentCommandBar extends CustomComponent {
             border: solid 1px var(--stroke-card-default);
             border-radius: 5px;
             box-shadow: 0px 8px 16px var(--shadow-flyout);
-            
             display: none;
             flex-direction: column;
-            margin-top: 5px;
-            position: absolute;
-            right: 0;
-            top: 100%;
-            z-index: 1;
+            position: fixed;
+            z-index: 9999;
         }
 
         .command-bar.active .secondary-commands {
@@ -100,8 +97,10 @@ export class FluentCommandBar extends CustomComponent {
     private _primaryCommandsContainer: HTMLDivElement;
     private _primaryCommandsSlot: HTMLSlotElement;
     private _moreButton: HTMLDivElement;
+    private _secondaryCommandsDiv: HTMLDivElement;
     private _secondaryCommandsSlot: HTMLSlotElement;
     private _collapsedCommandsContainer: HTMLDivElement;
+    private _menuCleanup: () => void;
 
     public isMovingCommand: boolean;
     public lastVisibleCommandIndex: number;
@@ -136,7 +135,7 @@ export class FluentCommandBar extends CustomComponent {
     }
 
     get isOpen() {
-        return this.hasAttribute('is-open') && eval(this.getAttribute('is-open'));
+        return this.hasAttribute('is-open') && this.getAttribute('is-open') !== 'false';
     }
 
     get customMenu(): boolean {
@@ -168,6 +167,11 @@ export class FluentCommandBar extends CustomComponent {
         return this._moreButton;
     }
 
+    get secondaryCommandsDiv() {
+        this._secondaryCommandsDiv ??= this.shadowRoot.querySelector('.secondary-commands');
+        return this._secondaryCommandsDiv;
+    }
+
     get secondaryCommandsSlot() {
         this._secondaryCommandsSlot ??= this.shadowRoot.querySelector(
             'slot[name=secondary-commands]'
@@ -178,6 +182,20 @@ export class FluentCommandBar extends CustomComponent {
     get collapsedCommandsContainer() {
         this._collapsedCommandsContainer ??= this.shadowRoot.querySelector('.collapsed-commands');
         return this._collapsedCommandsContainer;
+    }
+
+    /* Others */
+    get commands() {
+        // TODO: Optimize
+        return [
+            ...this.primaryCommandsSlot
+                .assignedElements()
+                .filter(el => el instanceof FluentAppBarButton),
+            ...this.secondaryCommandsSlot
+                .assignedElements()
+                .filter(el => el instanceof FluentAppBarButton),
+            ...this.collapsedCommandsContainer.childNodes,
+        ];
     }
 
     render(): string {
@@ -200,11 +218,14 @@ export class FluentCommandBar extends CustomComponent {
     connectedCallback() {
         // Event listeners
         this.moreButton.addEventListener('click', e => {
-            if (this.customMenu)
-                this.dispatchEvent(new CustomEvent('menuinvoked', { bubbles: true }));
-            else this.toggleAttribute('is-open', !this.isOpen);
-
             e.stopPropagation();
+
+            if (this.customMenu) {
+                this.dispatchEvent(new CustomEvent('menuinvoked', { bubbles: true }));
+                return;
+            }
+
+            this.toggleAttribute('is-open', !this.isOpen);
         });
 
         this.primaryCommandsSlot.addEventListener('slotchange', this.handleSlotChange);
@@ -269,25 +290,21 @@ export class FluentCommandBar extends CustomComponent {
             appearance = 'collapsed';
         }
 
-        if (this.setCommandAppearance(appearance)) return;
+        if (this.primaryCommands) {
+            this.setCommandAppearance(appearance);
+            return;
+        }
 
         // Waits for primary commands to be stored, then set appearance.
-        const waitInterval = setInterval(() => {
-            clearInterval(waitInterval);
-            this.setCommandAppearance(appearance);
-        }, 50);
+        setTimeout(() => this.setCommandAppearance(appearance), 50);
     }
 
     setCommandAppearance(appearance) {
-        if (this.primaryCommands) {
-            this.primaryCommands.forEach(command => {
-                command.setAttribute('appearance', appearance);
-            });
+        this.primaryCommands?.forEach(command => {
+            command.setAttribute('appearance', appearance);
+        });
 
-            return true;
-        }
-
-        return false;
+        return !!this.primaryCommands;
     }
 
     setMoreButtonVisibility() {
@@ -299,6 +316,17 @@ export class FluentCommandBar extends CustomComponent {
 
     setIsOpen() {
         this.commandBar.classList.toggle('active', this.isOpen);
+
+        if (this.isOpen) {
+            this._menuCleanup = autoUpdate(
+                this.moreButton,
+                this.secondaryCommandsDiv,
+                this.updateMenuPosition.bind(this)
+            );
+        } else if (this._menuCleanup) {
+            this._menuCleanup();
+        }
+
         this.setLabelPosition();
     }
 
@@ -406,6 +434,18 @@ export class FluentCommandBar extends CustomComponent {
         this.setMoreButtonVisibility();
     }
 
+    updateMenuPosition() {
+        computePosition(this.moreButton, this.secondaryCommandsDiv, {
+            placement: 'bottom-end',
+            middleware: [offset(16), flip(), shift()],
+        }).then(({ x, y }) => {
+            Object.assign(this.secondaryCommandsDiv.style, {
+                left: `${x}px`,
+                top: `${y}px`,
+            });
+        });
+    }
+
     toggleAttributes(command, toggle) {
         let attribute;
 
@@ -419,5 +459,11 @@ export class FluentCommandBar extends CustomComponent {
         }
 
         command.toggleAttribute(attribute, toggle);
+    }
+}
+
+declare global {
+    interface HTMLElementTagNameMap {
+        'fluent-command-bar': FluentCommandBar;
     }
 }
