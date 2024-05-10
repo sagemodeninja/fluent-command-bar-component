@@ -23,9 +23,9 @@ module.exports = (_, argv) => {
             rules: [
                 isDev
                     ? {
-                          test: /\.css$/i,
-                          use: [MiniCssExtractPlugin.loader, 'css-loader'],
-                      }
+                        test: /\.css$/i,
+                        use: [MiniCssExtractPlugin.loader, 'css-loader'],
+                    }
                     : {},
                 {
                     test: /\.ts$/,
@@ -39,13 +39,13 @@ module.exports = (_, argv) => {
         },
         devServer: isDev
             ? {
-                  static: {
-                      directory: path.join(__dirname, 'dist'),
-                  },
-                  compress: true,
-                  https: false,
-                  port: 3000,
-              }
+                static: {
+                    directory: path.join(__dirname, 'dist'),
+                },
+                compress: true,
+                https: false,
+                port: 3000,
+            }
             : {},
         devtool: isDev ? 'inline-source-map' : 'source-map',
     }

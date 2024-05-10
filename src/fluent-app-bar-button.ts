@@ -39,9 +39,8 @@ export class FluentAppBarButton extends CustomComponent {
             position: relative;
         }
         
-        :host(:focus) .control {
-            background-color: var(--fill-subtle-secondary);
-            box-shadow: 0 0 0 1.5px var(--fill-accent-secondary);
+        :host(:focus-visible) .control {
+            outline: var(--fill-accent-secondary) solid 2px;
         }
 
         @media (hover: hover) {
@@ -202,6 +201,11 @@ export class FluentAppBarButton extends CustomComponent {
             .replace('escape', 'esc')
     }
 
+    constructor() {
+        super()
+        this.setAccessibilityRoles()
+    }
+
     public render() {
         return `
             <div class="control" part="control">
@@ -214,13 +218,14 @@ export class FluentAppBarButton extends CustomComponent {
         `
     }
 
-    connectedCallback() {
+    public connectedCallback() {
         this.setState()
         this.addEventListeners()
     }
 
     protected stateHasChanged() {
         this.setState()
+        this.setAccessibilityRoles()
     }
     
     private setState() {
@@ -231,8 +236,16 @@ export class FluentAppBarButton extends CustomComponent {
         this.setTitle()
     }
 
+    private setAccessibilityRoles() {
+        const disabled = this.disabled ?? false
+
+        this.setAttribute('role', 'button')
+        this.setAttribute('role-label', this.label ?? this.command)
+        this.setAttribute('role-disabled', disabled.toString())
+    }
+
     private addEventListeners() {
-        this.addEventListener('click', () => this.onInvoke(false))
+        this.addEventListener('click', this.onInvoke.bind(this))
         this.addEventListener('keypress', ({code}) => {
             if (code === 'Enter') this.onAltInvoke()
         })
@@ -262,8 +275,7 @@ export class FluentAppBarButton extends CustomComponent {
         this.title = [this.label, accelerator].filter(Boolean).join(' ')
     }
 
-    private onInvoke(keyboard: boolean) {
-        if (!keyboard) this.blur()
+    private onInvoke() {
         this.dispatchEvent(new CustomEvent('invoke'))
     }
 
@@ -275,7 +287,7 @@ export class FluentAppBarButton extends CustomComponent {
         this.classList.add('invoked')
         defer(() => this.classList.remove('invoked'), 200)
 
-        this.onInvoke(true)
+        this.onInvoke()
     }
 }
 

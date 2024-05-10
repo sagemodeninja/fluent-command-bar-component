@@ -57,9 +57,8 @@ export class FluentCommandBar extends CustomComponent {
             -webkit-user-select: none;
         }
         
-        .menu-button:focus {
-            background-color: var(--fill-subtle-secondary);
-            box-shadow: 0 0 0 1.5px var(--fill-accent-secondary);
+        .menu-button:focus-visible {
+            outline: var(--fill-accent-secondary) solid 2px;
         }
 
         .menu-button:hover {
@@ -105,7 +104,6 @@ export class FluentCommandBar extends CustomComponent {
     
     private _lastWrappedIndex: number
     private _menuShown: boolean
-    private _dismissMenu: any
     private _menuCleanup: any
 
     @query('.control')
@@ -201,15 +199,11 @@ export class FluentCommandBar extends CustomComponent {
     private addEventListeners() {
         this._container.addEventListener('slotchange', this.updateCommands.bind(this))
         this._resizeObserver.observe(this._control)
-        this._menuButton.addEventListener('click', () => this.onMenuInvoke(false))
+        this._menuButton.addEventListener('click', this.onMenuInvoke.bind(this))
         this._menuButton.addEventListener('keypress', this.onMenuAltInvoke.bind(this))
+        this._menuButton.addEventListener('focusout', this.dismissMenu.bind(this))
         this._menu.addEventListener('toggle', this.onMenuToggle.bind(this))
-        this._dismissMenu = (e: FocusEvent) => {
-            if (!this._menu.contains(e.relatedTarget as Node)) {
-                this._menu.removeEventListener('focusout', this._dismissMenu)
-                this.hideMenu()
-            }
-        }
+        this._menu.addEventListener('focusout', this.dismissMenu.bind(this))
     }
 
     private updateCommands() {
@@ -238,9 +232,7 @@ export class FluentCommandBar extends CustomComponent {
         this.wrap()
     }
 
-    private onMenuInvoke(keyboard: boolean) {
-        if (!keyboard) this._menuButton.blur()
-
+    private onMenuInvoke() {
         this.customMenu
             ? this.dispatchEvent(new CustomEvent('menuinvoked', { bubbles: true }))
             : this.showMenu()
@@ -253,7 +245,7 @@ export class FluentCommandBar extends CustomComponent {
         this._menuButton.classList.add('invoked')
         defer(() => this._menuButton.classList.remove('invoked'), 150)
 
-        this.onMenuInvoke(true)
+        this.onMenuInvoke()
     }
 
     private onCommandInvoked(e: CustomEvent) {
@@ -349,8 +341,12 @@ export class FluentCommandBar extends CustomComponent {
                 top: `${y}px`
             })
         })
+    }
 
-        this._menu.addEventListener('focusout', this._dismissMenu)
+    private dismissMenu(event: FocusEvent) {
+        if (!this._menu.contains(event.relatedTarget as Node)) {
+            this.hideMenu()
+        }
     }
 
     private hideMenu() {
@@ -359,7 +355,6 @@ export class FluentCommandBar extends CustomComponent {
 
     private onMenuToggle(e: ToggleEvent) {
         if (e.newState === 'closed') {
-            this._dismissMenu(e)
             this._menuCleanup()
             defer(() => this._menuShown = false, 150)
         }
