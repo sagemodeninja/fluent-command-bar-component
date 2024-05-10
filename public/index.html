@@ -1,54 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Command Bar - Demo</title>
-    </head>
-    <body>
-        <p>AppBarButton</p>
-        <fluent-app-bar-button icon="AttachCamera" appearance="bottom" label="Attach Camera"></fluent-app-bar-button>
-        <fluent-app-bar-button icon="Like" label="Like" appearance="collapsed"></fluent-app-bar-button>
-        <fluent-app-bar-button icon="Dislike" label="Dislike"></fluent-app-bar-button>
-        <fluent-app-bar-button id="mode_command" icon="Brightness" label="Toggle Mode"></fluent-app-bar-button>
 
-        <p>AppBarButton w/o Label</p>
-        <fluent-app-bar-button icon="Edit" modifier="Control" key="Z"></fluent-app-bar-button>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Command Bar - Demo</title>
+</head>
 
-        <p>AppBarSeparator</p>
-        <div>
-            <fluent-command-bar>
-                <fluent-app-bar-button icon="Add" label="Add"></fluent-app-bar-button>
-                <fluent-app-bar-separator></fluent-app-bar-separator>
-                <fluent-app-bar-button icon="Edit" label="Edit"></fluent-app-bar-button>
-            </fluent-command-bar>
-        </div>
-        
-        <p>CommandBar</p>
-        <button id="enable_disable">Enable Share</button>
-        <br />
-        <br />
-        <div>
-            <fluent-command-bar default-label-position="right">
-                <fluent-app-bar-button class="command_button" icon="Add" label="Add" modifier="Control" key="A"></fluent-app-bar-button>
-                <fluent-app-bar-button class="command_button" icon="Edit" label="Edit" modifier="Control" key="E" use-accent></fluent-app-bar-button>
-                <fluent-app-bar-separator></fluent-app-bar-separator>
-                <fluent-app-bar-button id="share_command" class="command_button" label="Share" key="F4" disabled>
-                    <fluent-font-icon glyph="&#xE72D" slot="icon"></fluent-font-icon>
-                </fluent-app-bar-button>
-    
-                <div slot="secondary-commands">
-                    <fluent-app-bar-button class="command_button" icon="Settings" label="Settings" modifier="Control" key="I"></fluent-app-bar-button>
-                    <fluent-app-bar-button class="command_button" icon="Add" label="Button 1" modifier="Alt" key="N" use-accent disabled></fluent-app-bar-button>
-                    <fluent-app-bar-button class="command_button" icon="Delete" label="Button 2" key="Delete"></fluent-app-bar-button>
-                    <fluent-app-bar-separator></fluent-app-bar-separator>
-                    <fluent-app-bar-button class="command_button" icon="FontDecrease" label="Very long Button 3" modifier="Control" key="-"></fluent-app-bar-button>
-                    <fluent-app-bar-button class="command_button" icon="FontIncrease" label="Button 4" modifier="Control" key="+"></fluent-app-bar-button>
-                    <fluent-app-bar-button class="command_button" icon="ClosePane" label="Close" key="Escape"></fluent-app-bar-button>
-                </div>
-            </fluent-command-bar>
-        </div>
+<body>
+    <p>AppBarButton</p>
+    <fluent-app-bar-button icon="AttachCamera" appearance="bottom" label="Attach Camera"></fluent-app-bar-button>
+    <fluent-app-bar-button icon="Like" label="Like" appearance="collapsed"></fluent-app-bar-button>
+    <fluent-app-bar-button icon="Dislike" label="Dislike"></fluent-app-bar-button>
+    <fluent-app-bar-button id="mode_command" icon="Brightness" label="Toggle Mode"></fluent-app-bar-button>
 
-        <p id="debug" style="display: none;"></p>
-    </body>
+    <p>AppBarButton w/o Label</p>
+    <fluent-app-bar-button icon="Edit" modifier="Control" key="Z"></fluent-app-bar-button>
+
+    <p>CommandBar</p>
+    <button id="toggle_disable">Toggle Disabled</button>
+    <button id="toggle_hide">Toggle Hidden</button>
+    <br />
+    <br />
+    <div>
+        <fluent-command-bar id="test-command" default-label-position="right">
+            <fluent-app-bar-button class="command_button" icon="Add" label="Add" modifier="Control"
+                key="A"></fluent-app-bar-button>
+            <fluent-app-bar-button class="command_button" icon="Edit" label="Edit" modifier="Control" key="E"
+                use-accent></fluent-app-bar-button>
+            <fluent-app-bar-button id="share_command" class="command_button" label="Share" key="F4">
+                <fluent-font-icon glyph="&#xE72D" slot="icon"></fluent-font-icon>
+            </fluent-app-bar-button>
+            <fluent-app-bar-button class="command_button" icon="Settings" label="Settings" modifier="Control" key="I"
+                is-secondary></fluent-app-bar-button>
+            <fluent-app-bar-button class="command_button" command="sample" icon="Add" label="Button 1" modifier="Alt"
+                key="N" use-accent is-secondary></fluent-app-bar-button>
+            <fluent-app-bar-button class="command_button" icon="Delete" label="Button 2" key="Delete"
+                is-secondary></fluent-app-bar-button>
+            <fluent-app-bar-button class="command_button" icon="FontDecrease" label="Very long Button 3"
+                modifier="Control" key="-" is-secondary></fluent-app-bar-button>
+            <fluent-app-bar-button class="command_button" icon="FontIncrease" label="Button 4" modifier="Control"
+                key="+" is-secondary></fluent-app-bar-button>
+            <fluent-app-bar-button class="command_button" icon="ClosePane" label="Close" key="Escape"
+                is-secondary></fluent-app-bar-button>
+        </fluent-command-bar>
+    </div>
+    <fluent-command-bar id="second-command" default-label-position="right" position="right">
+        <fluent-app-bar-button class="command_button" icon="Add" label="Add"></fluent-app-bar-button>
+        <fluent-app-bar-button class="command_button" icon="Edit" label="Edit" use-accent></fluent-app-bar-button>
+        <fluent-app-bar-button id="share_command" class="command_button" label="Share" disabled>
+            <fluent-font-icon glyph="&#xE72D" slot="icon"></fluent-font-icon>
+        </fluent-app-bar-button>
+    </fluent-command-bar>
+
+    <p id="debug" style="display: none;"></p>
+</body>
+
 </html>
