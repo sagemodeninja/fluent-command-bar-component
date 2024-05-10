@@ -1,42 +1,47 @@
-import { CustomComponent, customComponent } from '@sagemodeninja/custom-component';
+import { CustomComponent, customComponent, property, query } from '@sagemodeninja/custom-component';
 import { FluentAppBarButton } from './fluent-app-bar-button';
 import { autoUpdate, computePosition, offset, flip, shift } from '@floating-ui/dom';
 
-const MORE_BTN_WIDTH = 47;
-const COMMAND_BAR_PADDING = 12;
+const MORE_BTN_WIDTH = 42
+const SPACING = 6
+
+export const defer = (func: any, delay?: number) => {
+    window.setTimeout(func, delay ?? 0)
+}
+
+export type CommandState = { [command: string]: boolean }
 
 @customComponent('fluent-command-bar')
 export class FluentCommandBar extends CustomComponent {
     static styles = `
         :host {
-            display: inline-block;
-            height: 46px;
-            max-width: 100%;
-            user-select: none;
-        }
-
-        .command-bar {
-            align-items: center;
-            border-radius: 4px;
             box-sizing: border-box;
-            display: flex;
+            display: block;
+            height: 46px;
             padding: 6px;
-            position: relative;
+            user-select: none;
+            width: 100%;
         }
 
-        .primary-commands {
+        .control {
             align-items: center;
-            column-gap: 5px;
             display: flex;
-            overflow-x: hidden;
+            gap: 6px;
+            width: 100%;
         }
 
-        .primary-commands:not(:empty) {
-            margin-right: 5px;
+        :host([position=right]) .control {
+            justify-content: flex-end;
+        }
+
+        .primary-container {
+            align-items: center;
+            display: flex;
+            gap: 6px;
         }
 
         /* Button */
-        .more-button {
+        .menu-button {
             align-items: center;
             background-color: transparent;
             border-radius: 5px;
@@ -46,424 +51,351 @@ export class FluentCommandBar extends CustomComponent {
             display: none;
             height: 100%;
             min-height: 36px;
+            outline: none;
             padding: 0 3px;
-            position: relative;
             user-select: none;
             -webkit-user-select: none;
         }
         
-        .more-button:hover {
+        .menu-button:focus {
+            background-color: var(--fill-subtle-secondary);
+            box-shadow: 0 0 0 1.5px var(--fill-accent-secondary);
+        }
+
+        .menu-button:hover {
             background-color: var(--fill-subtle-secondary);
         }
         
-        .more-button:active {
+        .menu-button.invoked,
+        .menu-button:active {
             background-color: var(--fill-subtle-tertiary);
             color: var(--fill-text-secondary);
         }
         
-        .more-button fluent-symbol-icon {
+        .menu-button fluent-symbol-icon {
             margin: 0 8px;
         }
 
         /* Secondary commands */
-        .secondary-commands {
+        .menu {
             background-color: var(--background-fill-mica-base);
-            background-blend-mode: color, luminosity;
-            -webkit-backdrop-filter: saturate(180%) blur(100px);
-            backdrop-filter: saturate(180%) blur(100px);
             border: solid 1px var(--stroke-card-default);
-            border-radius: 5px;
+            border-radius: 8px;
             box-shadow: 0px 8px 16px var(--shadow-flyout);
-            display: none;
-            flex-direction: column;
+            inset: unset;
+            outline: none;
+            padding: 0;
             position: fixed;
-            z-index: 9999;
         }
 
-        .command-bar.active .secondary-commands {
-            display: flex;
-        }
-
-        .collapsed-commands:not(:empty) {
+        .collapsed-container:not(:empty) {
             border-top: solid 1px var(--stroke-divider-default);
         }
 
-        .collapsed-commands fluent-app-bar-separator:first-child {
+        .collapsed-container fluent-app-bar-separator:first-child {
             display: none;
         }
-    `;
+    `
 
-    private _commandBar: HTMLDivElement;
-    private _primaryCommandsContainer: HTMLDivElement;
-    private _primaryCommandsSlot: HTMLSlotElement;
-    private _moreButton: HTMLDivElement;
-    private _secondaryCommandsDiv: HTMLDivElement;
-    private _secondaryCommandsSlot: HTMLSlotElement;
-    private _collapsedCommandsContainer: HTMLDivElement;
-    private _menuCleanup: () => void;
+    private readonly _commands: FluentAppBarButton[]
+    private readonly _primaryCommands: FluentAppBarButton[]
+    private readonly _commandWidths: number[]
+    private readonly _resizeObserver: ResizeObserver
+    private readonly _commandResizeObserver: ResizeObserver
+    
+    private _lastWrappedIndex: number
+    private _menuShown: boolean
+    private _dismissMenu: any
+    private _menuCleanup: any
 
-    public isMovingCommand: boolean;
-    public lastVisibleCommandIndex: number;
-    public secondaryContainer: Element;
-    public primaryCommands: FluentAppBarButton[];
-    public primaryCommandsStore: any[];
-    public parentResizeObserver: ResizeObserver;
+    @query('.control')
+    private _control: HTMLDivElement
+
+    @query('slot')
+    private _container: HTMLSlotElement
+
+    @query('.menu-button')
+    private _menuButton: HTMLDivElement
+
+    @query('.menu')
+    private _menu: HTMLDivElement
+
+    @query('.secondary-container')
+    private _secondaryContainer: HTMLDivElement
+
+    @query('.collapsed-container')
+    private _collapsedContainer: HTMLDivElement
+
+    @property()
+    public position: string
+
+    @property({ attribute: 'default-label-position' })
+    public defaultLabelPosition: string
+
+    @property({ attribute: 'custom-menu' })
+    public customMenu: boolean
+
+    public get commands() {
+        return this._commands
+    }
+
+    /* Legacy */
+    public get isOpen() {
+        return this._menuShown
+    }
 
     constructor() {
-        super();
+        super()
 
-        this.setCommandAppearance = this.setCommandAppearance.bind(this);
-        this.handleSlotChange = this.handleSlotChange.bind(this);
-        this.autoAdjust = this.autoAdjust.bind(this);
-
-        this.isMovingCommand = false;
-        this.lastVisibleCommandIndex = 0;
+        this._commands = []
+        this._primaryCommands = []
+        this._commandWidths = []
+        this._resizeObserver = new ResizeObserver(this.wrap.bind(this))
+        this._commandResizeObserver = new ResizeObserver(this.updateWidths.bind(this))
     }
 
-    static get observedAttributes() {
-        return ['is-open', 'default-label-position', 'custom-menu'];
-    }
-
-    /* Attributes */
-    get defaultLabelPosition() {
-        return this.getAttribute('default-label-position') ?? 'right';
-    }
-
-    set defaultLabelPosition(value) {
-        this.setAttribute('default-label-position', value);
-        this.setLabelPosition();
-    }
-
-    get isOpen() {
-        return this.hasAttribute('is-open') && this.getAttribute('is-open') !== 'false';
-    }
-
-    get customMenu(): boolean {
-        return this.hasAttribute('custom-menu') && this.getAttribute('custom-menu') !== 'false';
-    }
-
-    set customMenu(value: boolean) {
-        this.toggleAttribute('custom-menu', value);
-    }
-
-    /* DOM */
-    get commandBar() {
-        this._commandBar ??= this.shadowRoot.querySelector('.command-bar');
-        return this._commandBar;
-    }
-
-    get primaryCommandsContainer() {
-        this._primaryCommandsContainer ??= this.shadowRoot.querySelector('.primary-commands');
-        return this._primaryCommandsContainer;
-    }
-
-    get primaryCommandsSlot() {
-        this._primaryCommandsSlot ??= this.shadowRoot.querySelector('.primary-commands slot');
-        return this._primaryCommandsSlot;
-    }
-
-    get moreButton() {
-        this._moreButton ??= this.shadowRoot.querySelector('.more-button');
-        return this._moreButton;
-    }
-
-    get secondaryCommandsDiv() {
-        this._secondaryCommandsDiv ??= this.shadowRoot.querySelector('.secondary-commands');
-        return this._secondaryCommandsDiv;
-    }
-
-    get secondaryCommandsSlot() {
-        this._secondaryCommandsSlot ??= this.shadowRoot.querySelector(
-            'slot[name=secondary-commands]'
-        );
-        return this._secondaryCommandsSlot;
-    }
-
-    get collapsedCommandsContainer() {
-        this._collapsedCommandsContainer ??= this.shadowRoot.querySelector('.collapsed-commands');
-        return this._collapsedCommandsContainer;
-    }
-
-    /* Others */
-    get commands() {
-        // TODO: Optimize
-        return [
-            ...this.primaryCommandsSlot
-                .assignedElements()
-                .filter(el => el instanceof FluentAppBarButton),
-            ...this.secondaryCommandsSlot
-                .assignedElements()
-                .filter(el => el instanceof FluentAppBarButton),
-            ...this.collapsedCommandsContainer.childNodes,
-        ];
-    }
-
-    render(): string {
+    public render() {
         return `
-            <div class='command-bar'>
-                <div class='primary-commands'>
-                    <slot></slot>
+            <div class="control">
+                <slot class="primary-container" part="primary-container"></slot>
+                <div class="menu-button" title="See more" tabindex="0">
+                    <fluent-symbol-icon symbol="More" font-size="20"></fluent-symbol-icon>
                 </div>
-                <div class='more-button' title='See more'>
-                    <fluent-symbol-icon symbol='More' font-size='20'></fluent-symbol-icon>
-                </div>
-                <div class='secondary-commands'>
-                    <slot name='secondary-commands'></slot>
-                    <div class='collapsed-commands'></div>
+                <div class="menu" popover>
+                    <div class="secondary-container"></div>
+                    <div class="collapsed-container"></div>
                 <div>
             </div>
-        `;
+        `
     }
 
-    connectedCallback() {
-        // Event listeners
-        this.moreButton.addEventListener('click', e => {
-            e.stopPropagation();
+    public connectedCallback() {
+        this.addEventListeners()
+    }
 
-            if (this.customMenu) {
-                this.dispatchEvent(new CustomEvent('menuinvoked', { bubbles: true }));
-                return;
+    public toggleDisabled(state: CommandState) {
+        const commands = Object.keys(state)
+        this._commands.forEach(c => {
+            const command = c.command ?? c.label
+
+            if (commands.includes(command))
+                c.disabled = state[command]
+        })
+    }
+
+    public toggleHidden(state: CommandState) {
+        const commands = Object.keys(state)
+        this._commands.forEach(c => {
+            const command = c.command ?? c.label
+
+            if (commands.includes(command))
+                c.hidden = state[command]
+        })
+    }
+
+    protected stateHasChanged(changes: Map<string, any>): void {
+        if (changes.has('defaultLabelPosition'))
+            this.setLabelPosition()
+    }
+
+    private addEventListeners() {
+        this._container.addEventListener('slotchange', this.updateCommands.bind(this))
+        this._resizeObserver.observe(this._control)
+        this._menuButton.addEventListener('click', () => this.onMenuInvoke(false))
+        this._menuButton.addEventListener('keypress', this.onMenuAltInvoke.bind(this))
+        this._menu.addEventListener('toggle', this.onMenuToggle.bind(this))
+        this._dismissMenu = (e: FocusEvent) => {
+            if (!this._menu.contains(e.relatedTarget as Node)) {
+                this._menu.removeEventListener('focusout', this._dismissMenu)
+                this.hideMenu()
             }
-
-            this.toggleAttribute('is-open', !this.isOpen);
-        });
-
-        this.primaryCommandsSlot.addEventListener('slotchange', this.handleSlotChange);
-
-        this.secondaryCommandsSlot.addEventListener('slotchange', e => {
-            this.secondaryContainer = this.secondaryCommandsSlot.assignedNodes()[0] as Element;
-
-            this.setMoreButtonVisibility();
-
-            if (!this.secondaryContainer) return;
-
-            var commands = this.secondaryContainer.querySelectorAll(
-                'fluent-app-bar-button'
-            ) as NodeListOf<FluentAppBarButton>;
-            var separators = this.secondaryContainer.querySelectorAll('fluent-app-bar-separator');
-
-            // Calculate width of accelerator labels based on longest length.
-            const longest = Array.from(commands).reduce((a, b) =>
-                a.formattedAccelerator.length > b.formattedAccelerator.length ? a : b
-            );
-            const acceleratorWidth = longest.formattedAccelerator.length * 6;
-
-            commands.forEach(command => {
-                command.toggleAttribute('is-secondary', true);
-                command.setAcceleratorWidth(acceleratorWidth);
-            });
-
-            separators.forEach(separator => {
-                separator.toggleAttribute('horizontal', true);
-            });
-        });
-
-        this.parentResizeObserver = new ResizeObserver(() => this.autoAdjust());
-        this.parentResizeObserver.observe(this.parentElement);
-
-        window.addEventListener('click', () => {
-            this.toggleAttribute('is-open', false);
-        });
-    }
-
-    attributeChangedCallback(name) {
-        switch (name) {
-            case 'is-open':
-                this.setIsOpen();
-                break;
-            case 'default-label-position':
-                this.setLabelPosition();
-                break;
         }
     }
 
-    disconnectedCallback() {
-        this.parentResizeObserver.disconnect();
+    private updateCommands() {
+        const commands = this.querySelectorAll('fluent-app-bar-button')
+
+        commands.forEach(command => {
+            if (this._commands.includes(command))
+                return
+
+            this._commands.push(command)
+            command.addEventListener('invoke', this.onCommandInvoked.bind(this))
+
+            if (command.isSecondary) {
+                command.collapsed = true
+                this._secondaryContainer.append(command)
+                return
+            } 
+
+            command.dataset.index = this._primaryCommands.length.toString()
+            
+            this._primaryCommands.push(command)
+            this._commandWidths.push(command.offsetWidth + SPACING)
+            this._commandResizeObserver.observe(command)
+        })
+
+        this.wrap()
     }
 
-    setLabelPosition() {
-        if (!['bottom', 'collapsed', 'right'].includes(this.defaultLabelPosition)) return;
+    private onMenuInvoke(keyboard: boolean) {
+        if (!keyboard) this._menuButton.blur()
 
-        var appearance = this.defaultLabelPosition;
+        this.customMenu
+            ? this.dispatchEvent(new CustomEvent('menuinvoked', { bubbles: true }))
+            : this.showMenu()
+    }
 
-        if (appearance === 'bottom' && !this.isOpen) {
-            appearance = 'collapsed';
+    private onMenuAltInvoke(e: KeyboardEvent) {
+        if (e.code !== 'Enter') return
+
+        // Visual cue
+        this._menuButton.classList.add('invoked')
+        defer(() => this._menuButton.classList.remove('invoked'), 150)
+
+        this.onMenuInvoke(true)
+    }
+
+    private onCommandInvoked(e: CustomEvent) {
+        const target = e.target as FluentAppBarButton
+
+        this.hideMenu()
+        this.dispatchEvent(new CustomEvent('command', {
+            detail: target.command ?? target.label
+        }))
+    }
+
+    private wrap() {
+        const width = this._control.offsetWidth - MORE_BTN_WIDTH - SPACING
+        const count = this._primaryCommands.length
+
+        let index = count
+        let totalWidth = 0
+
+        for (var i = 0; i < count; i++) {
+            totalWidth += this._commandWidths[i]
+
+            if (totalWidth > width) {
+                index = i
+                break
+            }
         }
 
-        if (this.primaryCommands) {
-            this.setCommandAppearance(appearance);
-            return;
+        if (index === this._lastWrappedIndex)
+            return
+
+        this._lastWrappedIndex = index
+
+        this._primaryCommands.forEach((c,i) => {
+            this.moveCommand(c, i >= index)
+        })
+
+        this.toggleMenuBtn()
+    }
+
+    private moveCommand(command: FluentAppBarButton, collapse: boolean) {
+        if (collapse || command.collapsed) {
+            const target = collapse ? this._collapsedContainer : this
+            target.append(command)
         }
 
-        // Waits for primary commands to be stored, then set appearance.
-        setTimeout(() => this.setCommandAppearance(appearance), 50);
-    }
+        command.collapsed = collapse
 
-    setCommandAppearance(appearance) {
-        this.primaryCommands?.forEach(command => {
-            command.setAttribute('appearance', appearance);
-        });
-
-        return !!this.primaryCommands;
-    }
-
-    setMoreButtonVisibility() {
-        const hasCommands =
-            (this.secondaryContainer && this.secondaryContainer.children.length) ||
-            this.collapsedCommandsContainer.children.length;
-        this.moreButton.style.display = hasCommands ? 'flex' : 'none';
-    }
-
-    setIsOpen() {
-        this.commandBar.classList.toggle('active', this.isOpen);
-
-        if (this.isOpen) {
-            this._menuCleanup = autoUpdate(
-                this.moreButton,
-                this.secondaryCommandsDiv,
-                this.updateMenuPosition.bind(this)
-            );
-        } else if (this._menuCleanup) {
-            this._menuCleanup();
-        }
-
-        this.setLabelPosition();
-    }
-
-    handleSlotChange() {
-        const nodes = this.primaryCommandsSlot.assignedNodes();
-        this.primaryCommands = nodes.filter(
-            command =>
-                command instanceof HTMLElement && command.nodeName === 'FLUENT-APP-BAR-BUTTON'
-        ) as FluentAppBarButton[];
-
-        if (!this.isMovingCommand) {
-            this.style.opacity = '0';
-
-            this.primaryCommandsStore = this.primaryCommands.map(command => ({
-                parent: command.parentElement,
-                self: command,
-                previous: command.previousElementSibling,
-                bounds: command.getClientRects()[0].right - this.getClientRects()[0].left,
-            }));
-            this.lastVisibleCommandIndex = this.primaryCommands.length - 1;
-
-            // Waits for primary commands to be stored, then do initial auto adjusting.
-            const initialAdjustInterval = setInterval(() => {
-                if (this.primaryCommandsStore) {
-                    clearInterval(initialAdjustInterval);
-                    this.primaryCommandsStore.forEach(this.autoAdjust);
-                    this.setMoreButtonVisibility();
-                    this.style.opacity = '1';
-                }
-            }, 10);
-        }
-
-        this.isMovingCommand = false;
-        this.setLabelPosition();
-    }
-
-    autoAdjust() {
-        const store = this.primaryCommandsStore ?? [];
-
-        if (store.length === 0) return;
-
-        const parentWidth = this.parentElement.getClientRects()[0].width;
-        const potentialWidth =
-            parentWidth - (this.getLeft() + MORE_BTN_WIDTH + COMMAND_BAR_PADDING);
-
-        const index = this.lastVisibleCommandIndex;
-        const rightIndex = Math.min(store.length - 1, index + 1);
-
-        const command = store[index];
-        const rightCommand = store[rightIndex];
-
-        if (index >= 0 && command.bounds > potentialWidth) {
-            this.moveCommands(command.self, this, this.collapsedCommandsContainer);
-            this.lastVisibleCommandIndex -= 1;
-
-            if (index > 0 && command.previous.nodeName === 'FLUENT-APP-BAR-SEPARATOR')
-                this.moveCommands(command.previous, this, this.collapsedCommandsContainer);
-        }
-
-        if (rightIndex !== index && rightCommand.bounds < potentialWidth) {
-            if (rightIndex > 0 && rightCommand.previous.nodeName === 'FLUENT-APP-BAR-SEPARATOR')
-                this.moveCommands(rightCommand.previous, this.collapsedCommandsContainer, this);
-
-            this.moveCommands(rightCommand.self, this.collapsedCommandsContainer, this);
-            this.lastVisibleCommandIndex = rightIndex;
-        }
-    }
-
-    getLeft() {
-        if (!this.previousElementSibling) return 0;
-
-        const parentLeft = this.parentElement.getClientRects()[0].left;
-        const siblingRight = this.previousElementSibling.getClientRects()[0].right;
-
-        return siblingRight - parentLeft;
-    }
-
-    moveCommands(command, origin, destination) {
-        const collapse = origin === this;
-
-        this.isMovingCommand = true;
-
-        origin.removeChild(command);
-
-        if (collapse) {
-            const firstSibling = destination.firstChild;
-            destination.insertBefore(command, firstSibling);
-        } else {
-            destination.appendChild(command);
-        }
-
-        // commandmoved event.
-        var eventOptions = {
+        // Notifies custom menu about move
+        const event = new CustomEvent('commandmoved', {
             bubbles: true,
             detail: {
                 type: command.nodeName,
                 command: command.dataset.command ?? null,
                 collapsed: collapse,
             },
-        };
-        var customEvent = new CustomEvent('commandmoved', eventOptions);
-        this.dispatchEvent(customEvent);
+        })
 
-        this.toggleAttributes(command, collapse);
-        this.setMoreButtonVisibility();
+        this.dispatchEvent(event)
     }
 
-    updateMenuPosition() {
-        computePosition(this.moreButton, this.secondaryCommandsDiv, {
-            placement: 'bottom-end',
-            middleware: [offset(16), flip(), shift()],
-        }).then(({ x, y }) => {
-            Object.assign(this.secondaryCommandsDiv.style, {
+    private toggleMenuBtn() {
+        const wrapped = (this._secondaryContainer && this._secondaryContainer.children.length) || this._collapsedContainer.children.length
+        this._menuButton.style.display = wrapped ? 'flex' : 'none'
+    }
+
+    private updateWidths(entries: ResizeObserverEntry[]) {
+        entries.forEach(entry => {
+            const command = entry.target as FluentAppBarButton
+
+            if (command.collapsed) return
+            
+            const index = parseInt(command.dataset.index)
+            this._commandWidths[index] = command.offsetWidth + SPACING
+        })
+
+        defer(this.wrap.bind(this))
+    }
+
+    private showMenu() {
+        if (this._menuShown) return
+
+        this._menuShown = true
+        this._menu.showPopover()
+
+        this._menuCleanup = autoUpdate(this._menuButton, this._menu, async () => {
+            const {x, y} = await computePosition(this._menuButton, this._menu, {
+                placement: 'bottom-end',
+                middleware: [offset(8), flip(), shift()]
+            })
+
+            Object.assign(this._menu.style, {
                 left: `${x}px`,
-                top: `${y}px`,
-            });
-        });
+                top: `${y}px`
+            })
+        })
+
+        this._menu.addEventListener('focusout', this._dismissMenu)
     }
 
-    toggleAttributes(command, toggle) {
-        let attribute;
+    private hideMenu() {
+        this._menu.hidePopover()
+    }
 
-        switch (command.nodeName) {
-            case 'FLUENT-APP-BAR-BUTTON':
-                attribute = 'is-secondary';
-                break;
-            case 'FLUENT-APP-BAR-SEPARATOR':
-                attribute = 'horizontal';
-                break;
+    private onMenuToggle(e: ToggleEvent) {
+        if (e.newState === 'closed') {
+            this._dismissMenu(e)
+            this._menuCleanup()
+            defer(() => this._menuShown = false, 150)
+        }
+    }
+
+    // TODO: Reimplement
+    private setLabelPosition() {
+        if (!['bottom', 'collapsed', 'right'].includes(this.defaultLabelPosition)) return
+
+        var appearance = this.defaultLabelPosition
+
+        if (appearance === 'bottom' /*&& !this.isOpen*/) {
+            appearance = 'collapsed'
         }
 
-        command.toggleAttribute(attribute, toggle);
+        if (this._primaryCommands) {
+            this.setCommandAppearance(appearance)
+            return
+        }
+
+        // Waits for primary commands to be stored, then set appearance.
+        defer(() => this.setCommandAppearance(appearance), 50)
+    }
+
+    // TODO: Reimplement
+    private setCommandAppearance(appearance) {
+        this._primaryCommands?.forEach(command => {
+            command.setAttribute('appearance', appearance)
+        })
+
+        return !!this._primaryCommands
     }
 }
 
 declare global {
     interface HTMLElementTagNameMap {
-        'fluent-command-bar': FluentCommandBar;
+        'fluent-command-bar': FluentCommandBar
     }
 }
